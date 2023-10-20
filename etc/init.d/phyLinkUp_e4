@@ -1,0 +1,22 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2016 Shenzhen TP-LINK Technologies Co.Ltd.
+# Author		Wang Hao<wanghao@tp-link.com.cn>
+
+
+
+
+start() {
+	#set boot flag,used in kernel & ssdk
+	#echo 1 > /proc/phy_switch/booted
+	ssdk_sh debug phy set 3 0 0x1240 >/dev/null 2>&1
+	ssdk_sh debug phy set 4 0 0x1240 >/dev/null 2>&1
+    #set phy up flag
+    #touch /tmp/phyup_file
+	
+	return 0
+}
+
+stop() {
+	
+	return 0
+}

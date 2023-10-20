@@ -1,0 +1,39 @@
+#!/bin/sh
+local dnsprox_bin="/etc/init.d/dnsproxy"
+
+if [ "$SRCMODE" = "RE" ] && [ "$DSTMODE" = "HAP" ]; then
+    MODE=RE2HAP
+elif [ "$SRCMODE" = "RE" ] && [ "$DSTMODE" = "FAP" ]; then
+    MODE=RE2FAP
+elif [ "$SRCMODE" = "FAP" -o "$SRCMODE" = "HAP" ] && [ "$DSTMODE" = "RE" ]; then
+    MODE=AP2RE
+elif [ "$SRCMODE" = "HAP" ] && [ "$DSTMODE" = "FAP" ]; then
+    MODE=HAP2FAP
+elif [ "$SRCMODE" = "FAP" ] && [ "$DSTMODE" = "HAP" ]; then
+    MODE=FAP2HAP
+elif [ "$SRCMODE" = "NONE" ] && [ "$DSTMODE" = "HAP" ]; then
+    MODE=NONE2HAP
+elif [ "$SRCMODE" = "NONE" ] && [ "$DSTMODE" = "FAP" ]; then
+    MODE=NONE2FAP
+elif [ "$SRCMODE" = "NONE" ] && [ "$DSTMODE" = "RE" ]; then
+    MODE=NONE2RE
+fi
+
+case "$POINT" in
+    BEGIN)
+        case "$MODE" in
+            RE2HAP) dnsprox_bin stop;;
+            FAP2HAP) dnsprox_bin stop;;
+            AP2RE) dnsprox_bin stop;;
+            RE2FAP) dnsprox_bin restart;;
+            HAP2FAP) dnsprox_bin restart;;
+        esac
+        ;;
+    END)
+        case "$MODE" in
+            NONE2HAP) dnsprox_bin stop;;
+            NONE2RE) dnsprox_bin stop;;
+            NONE2FAP) dnsprox_bin restart;;
+        esac
+        ;;
+esac

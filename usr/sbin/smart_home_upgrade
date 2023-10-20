@@ -1,0 +1,134 @@
+#!/usr/bin/lua
+
+local appcloud = require("luci.model.app_cloudfirm")
+local cloud =  require "luci.controller.admin.mobile_app.cloud"
+local dbg = require "luci.tools.debug"
+local json = require "luci.json"
+local sys	= require "luci.sys"
+
+local download_start = "dl_start"
+local download_success = "dl_success"
+local download_fail = "dl_fail"
+local nixio = require "nixio"
+local pid = nixio.getpid()
+local smart_home_download_flag="/var/run/smart_home_download_flag"
+local uci = require "luci.model.uci"
+
+local function usage()
+	dbg("smart_home_upgrade [dl_start|dl_success|dl_fail]")
+end
+
+local function set_flag(params)
+    local cmd = "touch %s" % {params}
+    sys.call(cmd)
+end
+
+local function clear_flag(params)
+    local cmd = "rm %s" % {params}
+    sys.call(cmd)
+end
+
+local function is_flag_exist(params)
+    if nixio.fs.access(params) then
+        return true
+    end
+    return false
+end
+
+local function smart_home_download()
+	dbg("#### "..pid..":download latest firmware begin ####")
+	if is_flag_exist(smart_home_download_flag) then
+		dbg("Downloading...")
+		return
+	end
+
+	set_flag(smart_home_download_flag)
+	local ret = appcloud.fw_download()
+	dbg("#### "..pid..":download latest firmware result:%s####" % json.encode(ret))
+	if not ret then
+		dbg("download FAIL!")
+		clear_flag(smart_home_download_flag)
+	end
+end
+
+local function all_fw_download()
+	local fw_list = appcloud.get_fw_list()
+	dbg("fw_list:%s" % json.encode(fw_list))
+	if fw_list == nil or #fw_list < 1 then
+		dbg("fail to get fw_list")
+		return
+	end
+
+	local fw_num = #fw_list
+	local count = 0
+	for key, var in pairs(fw_list) do
+		if var.need_to_upgrade == true then
+            local FIRMWARE_END = "/tmp/upgrade/firmware_end" .. var.hw_id ..  var.oem_id
+			if is_flag_exist(FIRMWARE_END) then
+				count = count + 1
+			end
+		end
+	end
+
+	dbg("count:%d" % count)
+	dbg("fw_num:%d" % tonumber(fw_num))
+	if fw_num ~= count then
+		return false
+	else
+		return true
+	end
+end
+
+local function smart_home_upgrade()
+
+	dbg("#### "..pid..":download latest firmware SUCCESS ####")
+
+	if not is_flag_exist(smart_home_download_flag) then
+		dbg("NOT a smart_home_upgrade command...")
+		return
+	end
+
+	clear_flag(smart_home_download_flag)
+	if not all_fw_download() then
+		dbg("NOT all the firmware download ok, wait next time...")
+		return
+	end
+
+	dbg("#### "..pid..":upgrade latest firmware begin ####")
+	local ret = appcloud.fw_upgrade()
+	dbg("#### "..pid..":upgrade latest firmware result(%s)####" % json.encode(ret))
+
+	if not ret then
+		dbg("fail to upgrade latest firmware")
+	else
+		clear_flag(smart_home_download_flag)
+		dbg("#### "..pid..":upgrade latest firmware SUCCESS ####")
+		local uci_s = uci.cursor()
+		local system = {}
+		system.lastFwUpdateTime = tonumber((sys.exec("date +%s")):trim())
+		system.needUpload = "yes"
+		dbg("record system upgrade info:%s" % json.encode(system))
+		uci_s:section("smart_home", "system", "system", system)
+		uci_s:commit("smart_home")
+	end
+
+end
+
+local function main()
+
+	if arg == nil or arg[1] == nil then
+		return usage()
+	end
+
+	if arg[1] == download_start then
+		smart_home_download()
+	elseif arg[1] == download_fail then
+		dbg("#### download latest firmware FAIL ####")
+		clear_flag(smart_home_download_flag)
+	elseif arg[1] == download_success then
+		smart_home_upgrade()
+	end
+
+end
+
+main()

@@ -1,0 +1,23 @@
+#!/bin/sh
+# add it to crontabs, auto run
+. /lib/parental_control/core_get_history.sh
+. /lib/functions.sh
+
+flag=$(check_ntp_uptime_status)
+if [ "$flag" = "true" ];then
+    date -k # update time zone to kernel(sys_tz)
+    /etc/init.d/parental_control restart
+    echo "------>ntp update time">/dev/console
+fi
+
+flag=$(is_need_saveconfig_to_flash) 
+config_load parental_control
+if [ "$flag" = "true" ];then
+    config_foreach update_uci_monthly_days_info owner  #update seven days log
+    cp ${G_PC_INSIGHTS_PATH}/${G_UCI_CONFIG_FILE} ${G_UCI_DEFAULT_PATH} # tmp/tmp-device-config/pc_insights --> /etc/config/pc_insights
+    saveconfig
+    /etc/init.d/parental_control restart
+else
+    config_foreach update_day_info owner "1" #update today log
+fi 
+

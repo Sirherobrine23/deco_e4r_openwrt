@@ -1,0 +1,8 @@
+#!/usr/bin/lua
+
+-- get tm signature from flash and decode it.
+
+os.execute("nvrammanager -r /tmp/url_sig.cry -p url-sig >/dev/null 2>&1")
+local cry = require "luci.model.crypto"
+cry.dec_file_entry("/tmp/url_sig.cry", "/tmp/parental_control/url_sig.tgz")
+

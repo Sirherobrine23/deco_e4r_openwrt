@@ -1,0 +1,70 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2016 Shenzhen TP-LINK Technologies Co.Ltd.
+
+SERVICE_DAEMONIZE=1
+
+START=48
+STOP=48
+
+TMP_FILE="/tmp/tmp_bind_device_mac"
+DHCP_HOOK_MAC_PROC_FILE="/proc/dhcp_hook/dhcp_hook_mac"
+
+bind_device_num=0
+
+get_bind_device_mac(){
+	local section=$1
+	config_get value  $section mac
+	echo "mac:$value" > /dev/console
+	echo  -n "$value;" >> $TMP_FILE
+	bind_device_num=$(($bind_device_num + 1)) 
+}
+
+get_cap_mac(){
+	local cap_mac_str
+	local cap_mac
+	cap_mac_str=$(cat /tmp/work_mode|awk -F '"cap_mac":' '{print $2}' | cut -d\" -f2)
+	cap_mac=${cap_mac_str//\:/-}
+	echo "cap_mac:$cap_mac" > /dev/console
+
+	if [ "$cap_mac" != "" ]; then
+		cat /etc/config/bind_device_list | grep "$cap_mac"
+		if [ $? -ne 0 ]; then
+			echo  -n "$cap_mac;" >> $TMP_FILE
+			echo "$cap_mac to $TMP_FILE" > /dev/console
+			bind_device_num=$(($bind_device_num + 1)) 
+		fi
+	fi
+}
+start() {	
+
+# disable dhcp_hook_d in Router Mode
+	config_load sysmode
+	config_get system_mode sysmode mode "Router"
+	if [ "$system_mode" != "AP" ]; then
+		#rmmod tp_dhcp_hook &
+		echo -n "" > $TMP_FILE
+		config_load bind_device_list
+		config_foreach get_bind_device_mac	"device"	
+		echo $bind_device_num > /dev/console
+		get_cap_mac
+		echo $bind_device_num > /dev/console
+		cat  $TMP_FILE > $DHCP_HOOK_MAC_PROC_FILE
+		rm $TMP_FILE
+		
+		return 0
+	fi
+
+	service_start /usr/bin/dhcp_hook_d
+	
+	return 0
+}
+
+stop() {
+	service_stop /usr/bin/dhcp_hook_d
+	
+	return 0
+}
+
+service_triggers() {
+    procd_add_reload_trigger "wifi"
+}

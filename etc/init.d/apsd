@@ -1,0 +1,81 @@
+#!/bin/sh /etc/rc.common
+
+START=43
+USE_PROCD=1
+PROG=/usr/bin/apsd
+DEBUG_OUTOUT=1
+
+
+config_load sysmode
+config_get system_mode sysmode mode "Router"
+config_clear
+
+config_load wifi
+config_get guest_vlan_id guest vlan_id "0"
+config_get guest_isolate guest host_isolation "1"
+config_clear
+
+fap_mac=""
+
+get_fap_mac(){
+    local section=$1
+    local value
+    local role
+
+    config_get value $section mac
+    config_get role $section role
+    echo "mac:$value" > /dev/console
+    echo "role:$role" > /dev/console
+    if [ "$role" = "AP" ]; then
+        fap_mac="$value"
+    fi
+    
+}
+
+
+
+apsd_echo() {
+    if [ "$DEBUG_OUTOUT" -gt 0 ]; then
+            echo "${1}: ""$2"> /dev/console
+    fi
+}
+
+start_service() {
+    apsd_echo apsd "start apsd"
+    if [ "$system_mode" = "Router" ]; then
+        sed "s/\"eth_vlan_id\":[  ]*10/\"eth_vlan_id\": $guest_vlan_id/g" /etc/apsd.json > /tmp/apsd.json
+        echo "$guest_vlan_id" > /tmp/eth_vlan_id
+        procd_open_instance
+        procd_set_param command $PROG -c /tmp/apsd.json
+        procd_set_param respawn
+        procd_close_instance
+    else
+        cat /etc/apsd_ap.json > /tmp/apsd.json
+        if [ "$guest_isolate" = "1" ]; then
+            sed  -i 's/^[ ]*\"ath01\".*$/\"ath01\": {\"type\": \"2.4g\", \"compat_group\": 255, \"class\":1 },/g' /tmp/apsd.json
+            sed  -i 's/^[ ]*\"ath11\".*$/\"ath11\": {\"type\": \"5g\", \"compat_group\": 255, \"class\":1 },/g' /tmp/apsd.json
+            sed  -i 's/^[ ]*\"ath21\".*$/\"ath21\": {\"type\": \"5g_2\", \"compat_group\": 255, \"class\":1 },/g' /tmp/apsd.json
+        fi
+
+        config_load bind_device_list
+        config_foreach get_fap_mac "device"
+        config_clear
+        fap_mac=${fap_mac//-/:}
+        echo "fap: $fap_mac" > /dev/console
+
+        if [ -f "/proc/hyfi_filter/fap_mac"  ]; then
+            echo ${fap_mac:-00:00:00:00:00:00} > /proc/hyfi_filter/fap_mac
+        fi
+
+        procd_open_instance
+        procd_set_param command $PROG -c /tmp/apsd.json
+        procd_set_param respawn
+        procd_close_instance
+    fi
+
+}
+
+stop_service(){
+    apsd_echo apsd "stop apsd"
+}
+

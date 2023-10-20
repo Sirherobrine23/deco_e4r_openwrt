@@ -1,0 +1,271 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /lib/functions/network.sh
+. /lib/domain_login/domain_login_core.sh
+
+if [ "$TYPE" == "lan" ]; then
+	[ "$EVENT" == "FAPIPUPDATE" ] && {	
+		local iface="lan"
+		local lan_addr=
+		local mask=
+		#local network_lan_addr=
+		#local network_lan_mask=
+		local new_addr="$NEWADDR"
+		local new_mask="$NEWMASK"
+		local count=0
+		
+		[ "$new_addr" == "" -o "$new_mask" == "" ] && exit 0
+		network_flush_cache
+		#network_get_ipaddr network_lan_addr "$DLOGIN_LAN_IFACE"
+		#network_get_subnet network_lan_mask "$DLOGIN_LAN_IFACE"
+
+		lan_addr=$(uci get smartip_sync.settings.lanip)
+		mask_str=$(uci get smartip_sync.settings.mask)
+		mask=$(lua ${DLOGIN_LIB_PATH}/domain_login_tools.lua masklen $mask_str)
+		dlogin_echo "IPConflict2" "mask:$mask lan_addr:$lan_addr mask_str:$mask_str"
+		mask="${mask#*/}"
+		dlogin_echo "IPConflict2" "mask:$mask"
+		[ ! -e ${DLOGIN_LIB_PATH}/domain_login_tools.lua ] && exit 0
+		
+		local old_mask=
+		local old_ip=
+		config_load network
+		
+		# Before changing the lan ip address, it needs to record old lan mask
+		config_get old_mask "$DLOGIN_LAN_IFACE" netmask
+		config_get old_ip "$DLOGIN_LAN_IFACE" ipaddr
+		dlogin_echo "IPConflict2" "old_mask:$old_mask old_ip:$old_ip"
+		
+		[ "$new_addr" != "$lan_addr" -o "$new_mask" != "$mask_str" -o "$new_addr" != "$old_ip" -o "$new_mask" != "$old_mask" ] && {
+
+			# Set conflict true before change the lan address
+			uci set $DLOGIN_MOD_NAME.tp_domain.conflict='on'
+			uci set $DLOGIN_MOD_NAME.tp_domain.old_addr=$lan_addr
+			uci set $DLOGIN_MOD_NAME.tp_domain.old_mask=$mask_str
+			#update new lan ip addr,move it back from "dlogin_network_do"
+			uci set $DLOGIN_MOD_NAME.tp_domain.new_addr=$new_addr			
+			uci commit $DLOGIN_MOD_NAME
+
+			# Domain login ip conflict tips flow
+			dlogin_echo "IPConflict2" "FAPlanIP will change to $new_addr/$new_mask"
+			eval "/usr/sbin/domain_login conflict $lan_addr $old_mask $new_addr $new_mask"
+			
+			# Clear web session
+			lua ${DLOGIN_LIB_PATH}/domain_login_tools.lua ksess
+			sleep 2
+			lua ${DLOGIN_LIB_PATH}/domain_login_tools.lua ipchg $new_addr $new_mask
+
+			#save config to flash
+			lua -e 'require("luci.sys.config").save_config_version(0)'
+			lua -e 'require("luci.sys.config").save_config()'
+			/sbin/reload_config
+			ubus call network reload  &
+			
+			count=`ps |grep tm_shn |grep -v "grep" |wc -l`
+			dlogin_echo "IPConflict2" "br-lan tm_shn process num:$count"
+			[ 0 != $count ] && {
+				dlogin_echo "IPConflict2" "br-lan tm_shn reload"
+				/usr/bin/tm_shn -p &
+			}
+		}
+		local need_check_guest=
+		need_check_guest=$(lua ${DLOGIN_LIB_PATH}/domain_login_tools.lua needcheckguest)
+		if [ "true" == "$need_check_guest" ]; then
+			local guest_addr=$(uci get network.guest.ipaddr)
+			local guest_mask=$(uci get network.guest.netmask)
+			local ip, temp1, temp2, temp3
+			local wan_addr=
+			local internet_addr=
+			local wan_dns_addr=
+			local internet_dns_addr=
+			local ip_list=
+			local wan_mask=
+			local internet_mask=
+			local same_subnet="false"
+			local same_subnet_guest="false"
+			local same_subnet_internet="false"
+			
+			network_get_subnet wan_mask "wan"
+			wan_mask="${wan_mask#*/}"
+			network_get_subnet internet_mask "internet"
+			internet_mask="${internet_mask#*/}"
+
+			guest_mask=$(lua ${DLOGIN_LIB_PATH}/domain_login_tools.lua masklen $guest_mask)
+
+			ubus list | grep -q network.interface.wan && network_get_ipaddr wan_addr "wan" && network_get_dnsserver wan_dns_addr "wan"
+			ubus list | grep -q network.interface.internet && network_get_ipaddr internet_addr "internet" && network_get_dnsserver internet_dns_addr "internet"
+			dlogin_echo "IPConflict2" "wan_addr:$wan_addr $wan_dns_addr internet:$internet_addr $internet_dns_addr"
+
+			lan_primaryDns=$(uci get dhcp_server_sync.settings.primaryDns)
+			lan_secondaryDns=$(uci get dhcp_server_sync.settings.secondaryDns)
+
+			for ip in $new_addr $wan_addr $wan_dns_addr $internet_addr $internet_dns_addr ; do
+				if [ -n "$ip" ] ; then
+					if [ -n "$ip_list" ] ; then
+						ip_list="$ip"",""$ip_list"
+					else
+						ip_list="$ip"
+					fi
+				fi
+			done
+			dlogin_echo "IPConflict2" "ip list:$ip_list"
+			[[ -n $wan_mask ]] && {
+				same_subnet=$(lua ${DLOGIN_LIB_PATH}/domain_login_tools.lua checklist $guest_addr $ip_list $guest_mask $wan_mask)
+			}
+
+			[[ -n $internet_mask ]] && {
+				same_subnet_internet=$(lua ${DLOGIN_LIB_PATH}/domain_login_tools.lua checklist $guest_addr $ip_list $guest_mask $internet_mask)
+			}
+			[[ -n $mask ]] && {
+				same_subnet_guest=$(lua ${DLOGIN_LIB_PATH}/domain_login_tools.lua checklist $guest_addr $ip_list $guest_mask $mask)
+			}
+			dlogin_echo "IPConflict2" "same_subnet:$same_subnet"
+			[ "$same_subnet" = "true" -o "$same_subnet_guest" = "true" -o "$same_subnet_internet" = "true" ] && {
+				dlogin_echo "IPConflict2" "guestIP($guest_addr/$guest_mask) is conflict with lanIP/wanIP($ip_list)"
+				
+				# before changing the guest ip address, pre get new guest ip
+				local rslt=$(lua ${DLOGIN_LIB_PATH}/domain_login_tools.lua getnewguest $ip_list $mask $wan_mask $internet_mask)
+				[ -n "$rslt" -a "$rslt" != "false" ] && {
+					local new_guest_addr new_guest_mask
+					new_guest_addr=${rslt%/*}
+					new_guest_mask=${rslt#*/}
+					
+					dlogin_echo "IPConflict2"cho "guest IP will change to $rslt"
+					
+					#set network
+					uci set network.guest.ipaddr=$new_guest_addr
+					uci set network.guest.netmask=$new_guest_mask
+					
+					uci commit network
+					
+					#set dhcp_server
+					ip=$new_guest_addr
+					temp1=$(echo $ip | cut -d . -f 1)
+					temp2=$(echo $ip | cut -d . -f 2)
+					temp3=$(echo $ip | cut -d . -f 3)
+					ip="${temp1}"".""${temp2}"".""${temp3}"".""100"
+					uci set dhcp_server_sync.settings1.startIpAddress=$ip
+					ip="${temp1}"".""${temp2}"".""${temp3}"".""250"
+					uci set dhcp_server_sync.settings1.endIpAddress=$ip
+					uci set dhcp_server_sync.settings1.defaultGateway=$new_guest_addr
+					
+					uci commit dhcp_server_sync
+					
+					#set smartip
+					uci set smartip_sync.settings1.lanip=$new_guest_addr
+					uci set smartip_sync.settings1.gw=$new_guest_addr
+					uci set smartip_sync.settings1.mask=$new_guest_mask
+					
+					uci commit smartip_sync
+					
+					#save config to flash
+					lua -e 'require("luci.sys.config").save_config_version(0)'
+					lua -e 'require("luci.sys.config").save_config()'
+					/sbin/reload_config
+					sleep 2
+					
+					dlogin_echo "IPConflict2" "guest IP conflict detected, restart network and smartip!!!"
+					echo 1 > /tmp/lanip_conflict_guest
+					ubus call network reload  &
+					sleep 3
+					dlogin_echo "IPConflict2" "wifi disconnsta guest"
+					wifi disconnsta guest
+					sleep 3
+					/etc/init.d/smartip restart guest &
+				}
+			}
+		fi
+	}
+
+	[ "$EVENT" == "UPDATE" ] && {
+		dlogin_iface_event "$TYPE" "$NEWADDR" &
+		local iface="lan"
+		local lan_addr=
+		local mask=
+		#local network_lan_addr=
+		#local network_lan_mask=
+		local new_addr="$NEWADDR"
+		local new_mask="$NEWMASK"
+		local old_mask
+		local count=0
+		
+		[ "$new_addr" == "" -o "$new_mask" == "" ] && exit 0
+
+		lan_addr=$(uci get domain_login.tp_domain.new_addr)
+		old_mask=$(uci get domain_login.tp_domain.old_mask)
+
+		[ "$new_addr" != "$lan_addr" ] && {
+
+			# Set conflict true before change the lan address
+			uci set $DLOGIN_MOD_NAME.tp_domain.conflict='on'
+			uci set $DLOGIN_MOD_NAME.tp_domain.old_addr=$lan_addr
+			uci set $DLOGIN_MOD_NAME.tp_domain.old_mask=$new_mask
+			#update new lan ip addr,move it back from "dlogin_network_do"
+			uci set $DLOGIN_MOD_NAME.tp_domain.new_addr=$new_addr			
+			uci commit $DLOGIN_MOD_NAME
+
+			# Domain login ip conflict tips flow
+			dlogin_echo "domainlogin change to $new_addr/$new_mask"
+			eval "/usr/sbin/domain_login conflict $lan_addr $old_mask $new_addr $new_mask"
+			
+			# Clear web session
+			lua ${DLOGIN_LIB_PATH}/domain_login_tools.lua ksess			
+		}
+	}
+	
+elif [ "$TYPE" == "guest" ]; then
+	[ "$EVENT" == "FAPIPUPDATE" ] && {
+		local new_addr="$NEWADDR"
+		local new_mask="$NEWMASK"
+	
+		[ "$new_addr" == "" -o "$new_mask" == "" ] && exit 0
+		
+		local guest_addr=$(uci get network.guest.ipaddr)
+		local guest_mask=$(uci get network.guest.netmask)
+		local ip, temp1, temp2, temp3
+		
+		[ "$new_addr" != "$guest_addr" -o "$new_mask" != "$guest_mask" ] && {
+		    dlogin_echo "IPConflict2" "guestIP ${guest_addr}/${guest_mask} will change to ${guest_addr}/${guest_mask}"
+			
+			#set network
+			uci set network.guest.ipaddr=$new_addr
+			uci set network.guest.netmask=$new_mask
+			
+			uci commit network
+			
+			#set dhcp_server
+			ip=$new_addr
+			temp1=$(echo $ip | cut -d . -f 1)
+			temp2=$(echo $ip | cut -d . -f 2)
+			temp3=$(echo $ip | cut -d . -f 3)
+			ip="${temp1}"".""${temp2}"".""${temp3}"".""100"
+			uci set dhcp_server_sync.settings1.startIpAddress=$ip
+			ip="${temp1}"".""${temp2}"".""${temp3}"".""250"
+			uci set dhcp_server_sync.settings1.endIpAddress=$ip
+			uci set dhcp_server_sync.settings1.defaultGateway=$new_addr
+			
+			uci commit dhcp_server_sync
+			
+			#set smartip
+			uci set smartip_sync.settings1.lanip=$new_addr
+			uci set smartip_sync.settings1.gw=$new_addr
+			uci set smartip_sync.settings1.mask=$new_mask
+			
+			uci commit smartip_sync
+			
+			#save config to flash
+			lua -e 'require("luci.sys.config").save_config_version(0)'
+			lua -e 'require("luci.sys.config").save_config()'
+			/sbin/reload_config
+			sleep 2
+
+			ubus call network reload  &
+		}
+	}
+fi
+
+# hotplug from sync server
+if [ "$FAPEVENT" == "FAPIPCHANGE" ]; then
+	echo -n "$FAPADDR" > /proc/domain_dns_fapip
+fi

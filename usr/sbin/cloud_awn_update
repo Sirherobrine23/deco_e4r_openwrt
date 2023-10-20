@@ -1,0 +1,75 @@
+#!/usr/bin/lua
+
+-- update master_device_id and upload
+
+local json  = require "luci.json"
+local sys   = require "luci.sys"
+local uci   = require "luci.model.uci"
+local dbg   = require "luci.tools.debug"
+local cloud = require "cloud_req.cloud_comm"
+local appcloud = require "luci.model.app_cloudfirm"
+
+local MAX_TEST_NUM = 60
+local TEST_INTERVAL = 3
+
+local CLOUD_AWN_LOCK = "/var/run/cloud_awn.lock"
+local RWLocker = require("luci.model.locker").RWLocker
+
+local uci_r = uci.cursor()
+local uci_s = uci.cursor_state()
+
+local locker = RWLocker(CLOUD_AWN_LOCK)
+locker:wlock()
+    
+dbg.print("========= MODE: cloud_awn_update begin ==========")
+local mode = uci_s:get("repacd", "repacd", "DeviceType") 
+dbg.print("mode: " .. mode)
+	
+-- 1. if RE, wait until AP info is known by RE
+local role
+local master_device_id
+
+local found = false
+local _ubus = require("ubus").connect()  
+while not found do	
+	if mode == "RE" then	
+		role = "slave"
+		-- get mac of AP from awn
+		local ap_mac = appcloud.get_mode_info()
+		if ap_mac and ap_mac ~= "" then
+		    local dev_list = _ubus:call("sync","list",{})
+		    for key, val in pairs(dev_list) do
+		        local dev_mac = (val.mac):gsub(":", "-"):upper()
+		        if dev_mac == ap_mac then
+		            dbg.print("========= MODE: AP is in sync list of RE =========")
+		            found = true
+		            master_device_id = tostring(key)  
+		            break
+		        end
+		    end		
+	    end
+	    if not found then
+	        sys.call("sleep 3")
+	        mode = uci_s:get("repacd", "repacd", "DeviceType") 
+	    end			
+	else
+		role = "master"
+		master_device_id = (sys.exec("getfirm DEV_ID")):trim()
+		break
+	end		
+end
+_ubus:close() 
+
+-- 2. upload feature info	
+local sync_ver = uci_r:get("sync", "config", "version")
+if tonumber(sync_ver) ~= 0 then
+	dbg.print("========= MODE: update awn feature info to cloud ==========")
+	-- NOTICE: feature would be done after hello cloud	
+    --	appcloud.cloud_update_feature_info()	
+end
+
+-- 3. reconnect 
+local event = 3
+cloud.cloud_notify(event)
+
+locker:ulock()

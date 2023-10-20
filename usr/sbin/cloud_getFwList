@@ -1,0 +1,203 @@
+#!/usr/bin/lua
+
+-- get new firmware list from cloud.
+
+local cloud = require "cloud_req.cloud_comm"
+local json  = require "luci.json"
+local sys   = require "luci.sys"
+local nixio = require "nixio"
+local uci   = require "luci.model.uci"
+local dbg   = require "luci.tools.debug"
+local uci_r = uci.cursor()
+
+local function GetShortName(sName,nMaxCount,nShowCount)
+    if sName == nil or nMaxCount == nil then
+        return
+    end
+    
+    local sStr = sName
+    local tCode = {}
+    local tName = {}
+    local nLenInByte = #sStr
+    local nWidth = 0
+    
+    if nShowCount == nil then
+        nShowCount = nMaxCount - 3
+    end
+    
+    for i=1,nLenInByte do
+        local curByte = string.byte(sStr, i)
+        local byteCount = 0;
+        
+        if curByte>0 and curByte<=127 then
+            byteCount = 1
+        elseif curByte>=192 and curByte<=223 then
+            byteCount = 2
+        elseif curByte>=224 and curByte<=239 then
+            byteCount = 3
+        elseif curByte>=240 and curByte<=247 then
+            byteCount = 4
+        elseif curByte>=248 and curByte<=251 then
+            byteCount = 5
+        elseif curByte>=252 and curByte<=253 then
+            byteCount = 6
+        end
+        
+        local char = nil
+        
+        if byteCount > 0 then
+            char = string.sub(sStr, i, i+byteCount-1)
+            i = i + byteCount -1
+        end
+        
+        if byteCount >= 1 then
+            nWidth = nWidth + 1
+            table.insert(tName,char)
+            table.insert(tCode,1)
+        end
+    end
+    
+    if nWidth >= nMaxCount then
+        local _sN = ""
+        local _len = 3
+        
+        for i=1,#tName do
+            _sN = _sN .. tName[i]
+            if _len > nShowCount then
+                break
+            end
+            _len = _len + tCode[i]
+        end
+        sName = _sN .. "..."
+    end
+    return sName
+end
+
+local req = {}
+req.method = "getIntlFwList"
+req.params = {}
+req.params.hwId = cloud.TrimStr(sys.exec("getfirm HW_ID"))
+req.params.fwId = cloud.TrimStr(sys.exec("getfirm FW_ID"))
+req.params.oemId = cloud.TrimStr(sys.exec("getfirm OEM_ID"))
+req.params.devFwCurrentVer = string.match(sys.exec("getfirm SOFTVERSION"), "[^%s]+")
+req.params.locale = uci_r:get("locale", "sysinfo", "default") or "en_US"
+
+local re, data = cloud.send_request_sync(req, 5000, 1)
+
+-- connection error
+if re ~= 0 then os.exit(-1) end
+
+-- handler err_code
+if data.error_code ~= 0 then os.exit(data.error_code) end
+
+-- empty fwlist
+if #data.result.fwList == 0 then os.exit(0) end
+
+
+local fw = {}
+function checkFwVersion(fw1, fw2)
+	if fw1.fwVer == nil then return true end
+
+	local v1 = fw1.fwVer and (fw1.fwVer):upper()
+    local v2 = fw2.fwVer and (fw2.fwVer):upper()
+    if (not v1) or (not v2) then
+        return false
+    end
+
+    local pat = "(%d+)%.(%d+)%.(%d+)%s*BUILD%s*(%d+)%s*REL%.%s*(%d+)"
+    v1 = {v1:match(pat)}
+    v2 = {v2:match(pat)}
+
+    if #v1 == 0 or #v2 == 0 then
+        return false
+    end
+
+    for i = 1,#v1 do
+        if tonumber(v1[i]) > tonumber(v2[i]) then
+            --dbg.print(v1[i] .. " > " .. v2[i])
+            return false
+        elseif tonumber(v1[i]) < tonumber(v2[i]) then
+            --dbg.print(v1[i] .. " < " .. v2[i])
+            return true
+        end
+    end
+
+    return false
+end
+
+for i,v in ipairs(data.result.fwList) do
+	if checkFwVersion(fw, v) then
+		fw.fwType= v.fwType
+		fw.fwVer = v.fwVer
+		fw.fwReleaseDate = v.fwReleaseDate
+		fw.fwUrl = v.fwUrl
+		fw.fwReleaseLog = v.fwReleaseLog
+		fw.fwReleaseLogUrl = v.fwReleaseLogUrl
+		fw.fwLocation = v.fwLocation
+	end
+end
+
+-- check if v2 larger then v1
+function compareFwVersion(v1, v2)
+    v1 = v1 and v1:upper()
+    v2 = v2 and v2:upper()
+    if (not v1) or (not v2) then
+        return false
+    end
+
+    local pat = "(%d+)%.(%d+)%.(%d+)%s*BUILD%s*(%d+)%s*REL%.%s*(%d+)"
+    v1 = {v1:match(pat)}
+    v2 = {v2:match(pat)}
+
+    if #v1 == 0 or #v2 == 0 then
+        return false
+    end
+
+    for i = 1,#v1 do
+        if tonumber(v1[i]) > tonumber(v2[i]) then
+            --dbg.print(v1[i] .. " > " .. v2[i])
+            return false
+        elseif tonumber(v1[i]) < tonumber(v2[i]) then
+            --dbg.print(v1[i] .. " < " .. v2[i])
+            return true
+        end
+    end
+
+    return false
+end
+
+local devFwCurrentVer = string.match(sys.exec("getfirm SOFTVERSION"),"([^\n]+)")
+--dbg.print("devFwCurrentVer: " .. devFwCurrentVer)
+--dbg.print("cloudLatestFwVer: " .. fw.fwVer)
+
+if compareFwVersion(devFwCurrentVer, fw.fwVer) then
+	uci_r:set("cloud_config", "upgrade_info", "type", fw.fwType)
+	uci_r:set("cloud_config", "upgrade_info", "version", fw.fwVer)
+	uci_r:set("cloud_config", "upgrade_info", "release_date", fw.fwReleaseDate)
+	uci_r:set("cloud_config", "upgrade_info", "download_url", fw.fwUrl)
+	
+	local releaseNote = GetShortName(fw.fwReleaseLog, 800)
+    dbg.print("GetShortName of releaseNote: " .. releaseNote)
+    releaseNote = nixio.bin.b64encode(releaseNote)
+    uci_r:set("cloud_config", "upgrade_info", "release_log", releaseNote)
+	
+	uci_r:set("cloud_config", "upgrade_info", "release_log_url", fw.fwReleaseLogUrl)
+	uci_r:set("cloud_config", "upgrade_info", "location", fw.fwLocation)
+	uci_r:set("cloud_config", "new_firmware", "fw_new_notify", "1")
+	uci_r:set("cloud_config", "new_firmware", "notify_time", os.time())
+
+	if "3" == uci_r.get("cloud_config", "info", "tcsp_status") then
+		uci_r:set("cloud_config", "upgrade_info", "type", "3")
+	end
+else
+	uci_r:delete("cloud_config", "new_firmware")
+    uci_r:delete("cloud_config", "upgrade_info")
+    uci_r:set("cloud_config", "new_firmware", "cloud_push")
+    uci_r:set("cloud_config", "upgrade_info", "cloud_reply")    
+    uci_r:set("cloud_config", "info", "show_flag", "0")
+    uci_r:set("cloud_config", "info", "tcsp_status", "0")    
+end
+
+uci_r:commit("cloud_config")
+
+--sys.exec("lua /lib/wportal/clear_upgrade.lua")

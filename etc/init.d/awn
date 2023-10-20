@@ -1,0 +1,338 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2016 Tp-link.com
+# Author: Weng Kaiping <wengkaiping@tp-link.net>
+# Date: 25Apr16
+
+START=42
+
+USE_PROCD=1
+RESPAWN_THRESHOLD=120
+RESPAWN_TIMEOUT=5
+RESPAWN_RETRIES=10
+SERVICE_PATH="/usr/sbin/awnd"
+
+. /lib/functions.sh
+
+STDERR=/dev/console
+STDNULL=/dev/null 2>&1
+
+REPEATER_MODE=0
+AP_MODE=1
+
+DFT_LAN_MAC="00:0A:EB:93:AB:00"
+CONFIGFILE="/tmp/auto-wifi-network.conf"
+PLC_DEFAULT_INTERFACE="eth2"
+
+
+xappend() {
+	local value="$1"
+
+	echo "${value}" >> $CONFIGFILE
+}
+
+append_param() {
+	local section="$1"
+	local option="$2"
+	local key="$3"
+	local _tmp
+	config_get _tmp "$section" "$option"
+	[ -z "$_tmp" ] && return 0
+	xappend "$key=$_tmp"
+}
+
+generate_config() {
+	local cfg="$1"
+
+	append_param "$cfg" awn_enable            "enable"
+	append_param "$cfg" tm_scan_start         "tm_scan_start"
+	append_param "$cfg" tm_scan_interval      "tm_scan_interval"
+	append_param "$cfg" tm_scan_sched         "tm_scan_sched"
+	append_param "$cfg" tm_status_start       "tm_status_start"
+	append_param "$cfg" tm_status_interval    "tm_status_interval"
+	append_param "$cfg" tm_online_start       "tm_online_start"
+	append_param "$cfg" tm_online_interval    "tm_online_interval"
+	append_param "$cfg" tm_connect_duration   "tm_connect_duration"
+	
+    append_param "$cfg" tm_plc_inspect_start       "tm_plc_inspect_start"
+    append_param "$cfg" tm_plc_inspect_interval    "tm_plc_inspect_interval"
+    append_param "$cfg" tm_eth_inspect_start       "tm_eth_inspect_start"
+    append_param "$cfg" tm_eth_inspect_interval    "tm_eth_inspect_interval"
+    append_param "$cfg" plc_report_interval        "plc_report_interval"
+    append_param "$cfg" eth_report_interval        "eth_report_interval" 
+    append_param "$cfg" plc_entry_aging_time       "plc_entry_aging_time" 
+    append_param "$cfg" eth_entry_aging_time       "eth_entry_aging_time"  
+    
+	append_param "$cfg" scaling_factor        "scaling_factor"
+    append_param "$cfg" high_rssi_threshold   "high_rssi_threshold"
+    append_param "$cfg" low_rssi_threshold    "low_rssi_threshold"
+    append_param "$cfg" best_effort_rssi_threshold  "best_effort_rssi_threshold"     
+    append_param "$cfg" best_effort_rssi_inc  "best_effort_rssi_inc"  
+    append_param "$cfg" best_effort_uplink_rate  "best_effort_uplink_rate"      
+    append_param "$cfg" plc_rate_good         "plc_rate_good"
+    append_param "$cfg" wifi_lost_rate_to_plc "wifi_lost_rate_to_plc"     
+    
+	append_param "$cfg" debug_level           "debug_level"
+
+	echo >> $CONFIGFILE
+}
+
+check_backhaul()
+{
+    local dftgroupinfo=""
+    local groupinfo=""
+    local pregroupinfo=""
+    local ssid=""
+    local pass=""
+    
+    uci_set_state wifi sta_2g enable '0'
+    uci_set_state wifi sta_5g enable '0'
+#if CONFIG_TRI_BAND_SUPPORT
+    uci_set_state wifi sta_5g_2 enable '0'
+#endif
+    if test -f "/tmp/dft-group-info"
+    then
+        dftgroupinfo=$(cat /tmp/dft-group-info)
+    fi
+    
+    if test -f "/tmp/group-info"
+    then
+        groupinfo=$(cat /tmp/group-info)
+    fi
+
+    if test -f "/tmp/preconf-group-info"
+    then
+        pregroupinfo=$(cat /tmp/preconf-group-info)
+    fi
+
+    if [ "$dftgroupinfo" != "" ]; then
+         key=${dftgroupinfo#*key\":\"} && key=${key%%\"*}
+         len=${#key}
+         len=$((len/2))
+         for i in $(seq 1 1 16); do
+             pos=$((i*7))
+             if [ $len -ge $pos ];then
+                 ssid=${ssid}${key:$pos:1}
+             fi     
+         done
+         for i in $(seq 1 1 8); do
+             pos=$((i*11))
+             if [ $len -ge $pos ];then
+                 pass=${pass}${key:$((pos+len)):1}
+             else
+                 pass=${pass}${i}
+             fi        
+         done 
+         
+         uci_toggle_state wifi config ssid "$ssid"
+         uci_toggle_state wifi config password "$pass"         
+
+        if [ "$groupinfo" == "" ]; then
+            uci_toggle_state wifi sta ssid "$ssid"
+            uci_toggle_state wifi sta password "$pass"
+        fi
+    fi
+
+    ssid=""
+    pass=""
+
+    if [ "$pregroupinfo" != "" ]; then
+         key=${pregroupinfo#*key\":\"} && key=${key%%\"*}
+         len=${#key}
+         len=$((len/2))
+         for i in $(seq 1 1 16); do
+             pos=$((i*7))
+             if [ $len -ge $pos ];then
+                 ssid=${ssid}${key:$pos:1}
+             fi     
+         done
+         for i in $(seq 1 1 8); do
+             pos=$((i*11))
+             if [ $len -ge $pos ];then
+                 pass=${pass}${key:$((pos+len)):1}
+             else
+                 pass=${pass}${i}
+             fi        
+         done 
+         
+         uci_toggle_state wifi config pre_ssid "$ssid"
+         uci_toggle_state wifi config pre_password "$pass"         
+
+    fi
+
+    ssid=""
+    pass=""
+
+    if [ "$groupinfo" != "" ]; then
+         key=${groupinfo#*key\":\"} && key=${key%%\"*}
+         len=${#key}
+         len=$((len/2))
+         for i in $(seq 1 1 16); do
+             pos=$((i*7))
+             if [ $len -ge $pos ];then
+                 ssid=${ssid}${key:$pos:1}
+             fi     
+         done
+         for i in $(seq 1 1 8); do
+             pos=$((i*11))
+             if [ $len -ge $pos ];then
+                 pass=${pass}${key:$((pos+len)):1}
+             else
+                 pass=${pass}${i}
+             fi        
+         done 
+         
+         uci_toggle_state wifi backhaul ssid "$ssid"
+         uci_toggle_state wifi backhaul password "$pass"         
+
+         uci_toggle_state wifi sta ssid "$ssid"
+         uci_toggle_state wifi sta password "$pass"
+
+         uci_toggle_state plc config NetworkPassWd "$ssid"
+		#add by wanghao
+		#uci set plc.config.NetworkPassWd="$ssid"
+		#uci commit plc
+		#saveconfig
+		#add end
+    fi
+
+}
+
+
+generate_wifi_config(){
+
+	local lan_mac country sid
+
+	lan_mac=$(network_get_firm lan)
+	lan_mac=${lan_mac//-/:}
+
+	xappend "net_mac=${lan_mac:-$DFT_LAN_MAC}"
+	
+    country=`uci get wifi.radio_5g.country`
+    [ "$country" = "ID" ] && xappend "limit_scan_band1=0"
+
+    sid=`getfirm SPECIAL_ID`
+    [ "$sid" = "42340000" ] && xappend "limit_scan_band1=0"
+    [ "$sid" = "42340000" ] && xappend "only_scan_band4=1"
+
+	echo >> $CONFIGFILE
+}
+
+generate_plc_config(){
+    local plc_attached='0'
+
+    config_load 'plc'
+    config_get_bool plc_enabled config 'Enabled' '0'
+    config_get plc_ifname config PlcIfname PLC_DEFAULT_INTERFACE
+    
+    [ "$plc_enabled" -gt 0 ] && [ -d /sys/class/net/$plc_ifname ] && { 
+        plc_attached='1'
+        xappend "plc_ifname=${plc_ifname:-$PLC_DEFAULT_INTERFACE}" 
+        
+    }
+    
+    xappend "plc_attached=$plc_attached" 
+
+    echo >> $CONFIGFILE
+}
+
+generate_eth_config(){
+    local lan_ifname wan_ifname ifnames iface
+    local eth_ifnames=
+
+    ifnames=`uci get "network.lan.ifname"`
+    for iface in $ifnames; do
+        eth_ifnames="${eth_ifnames}${eth_ifnames:+","}${iface}"
+    done     
+ 
+    config_load 'network'
+    #config_get lan_ifname lan ifname "br-lan"
+    config_get wan_ifname wan device "br-wan" 
+    
+    xappend "lan_ifname=${lan_ifname:-br-lan}"
+    xappend "wan_ifname=${wan_ifname:-br-wan}"
+    
+    [ -n "$eth_ifnames" ] && xappend "eth_ifnames=$eth_ifnames" 
+    
+    echo >> $CONFIGFILE
+}
+
+
+
+reset_device_type(){
+	config_load repacd
+        config_get  old_type repacd DeviceType
+
+        uci_revert_state repacd
+	uci_set_state repacd repacd DeviceType 'AP'
+	uci_set_state repacd repacd GatewayConnectedMode 'CAP'
+
+	uci_revert_state wifi
+	uci_set_state wifi radio_2g channel '0'
+	uci_set_state wifi radio_5g channel '0'
+
+	if [ -f /tmp/wifi_set_done ] && [ ! "$old_type" = "AP" ]; then
+	    /etc/init.d/repacd restart
+	fi
+}
+
+load()
+{
+	echo "# auto-generated config file from /etc/config/auto_wifi_net" > $CONFIGFILE
+
+	# Load auto wifi network config
+	config_load auto_wifi_net
+	config_get_bool enabled auto_wifi_net 'awn_enable' '0'
+	[ "$enabled" -gt 0 ] || {
+	    return 1
+	}
+	
+
+	config_foreach generate_config auto_wifi_net
+	config_clear
+
+    # config backhual SSID/pwd according to group-info
+    check_backhaul
+
+	# Load wireless common config
+	generate_wifi_config	
+	generate_eth_config
+	generate_plc_config
+
+	echo >> $CONFIGFILE
+	config_clear
+	
+    procd_open_instance
+    procd_set_param command ${SERVICE_PATH} -C "$CONFIGFILE"
+    procd_set_param respawn ${RESPAWN_THRESHOLD} ${RESPAWN_TIMEOUT} ${RESPAWN_RETRIES}
+    procd_close_instance	
+
+	return 0
+}
+
+start_service() {
+        
+    #reset_device_type        
+
+	load
+
+	return 0
+}
+
+stop_service() {
+	[ -f $CONFIGFILE ] && rm -f $CONFIGFILE	
+	killall -9 awnd
+}
+
+reload_service()
+{
+	stop
+	load
+}
+
+
+boot()
+{
+    check_backhaul
+    start
+}
+

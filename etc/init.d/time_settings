@@ -1,0 +1,41 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2010 OpenWrt.org
+
+START=50
+
+USE_PROCD=1
+TS_LIBDIR=/lib/time_settings
+
+TIME_SETTINGS_MOD_ID=279
+LOG_INF_SERVICE_START=504
+LOG_INF_SERVICE_STOP=505
+LOG_INF_SERVICE_RESTART=508
+
+start_service() {
+	$TS_LIBDIR/set_time	
+	logx -p $$ $TIME_SETTINGS_MOD_ID $LOG_INF_SERVICE_START
+}
+
+reload_service() {
+	# update dst and reload to /etc/TZ
+    groupinfo="$(cat /tmp/group-info)"
+    role=${groupinfo#*role\":\"} && role=${role%%\"*}
+    role_id=1
+    [ "$role" != "AP" ] && role_id=0
+
+    if [ "$role_id" == "0" ]; then
+        killall -9 update_dst_from_ap
+        /usr/sbin/update_dst_from_ap &
+        exit 0
+    fi
+    dstrule_num=$(uci get systime.@system[0].dstrule_num)
+    if [ "$dstrule_num" == "" ]; then
+        /usr/sbin/cloud_updateDst &	
+    fi
+	logx -p $$ $TIME_SETTINGS_MOD_ID $LOG_INF_SERVICE_RESTART
+	$TS_LIBDIR/set_time	
+}
+
+service_triggers() {
+    procd_add_reload_trigger "time_settings"
+}

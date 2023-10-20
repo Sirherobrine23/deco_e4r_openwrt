@@ -1,0 +1,34 @@
+#!/usr/bin/lua
+
+local cloud = require "cloud_req.cloud_comm"
+local sys   = require "luci.sys"
+local dbg   = require "luci.tools.debug"
+local appcloud = require "luci.model.app_cloudfirm"
+
+local MAX_TEST_NUM = 60
+local TEST_INTERVAL = 3
+
+
+
+-- 1. wait until internet is on
+local online = appcloud.check_online_status()
+local interval = TEST_INTERVAL
+local test_num = 1
+while not online do
+	sys.call("sleep %d" % interval)		
+	online = appcloud.check_online_status()	
+	test_num = test_num + 1
+	--interval = interval + TEST_INTERVAL
+end
+dbg.print("========= CLOUD: online check end after %d times ==========" % test_num)
+
+-- 2. reconnect
+local cloud_status = appcloud.get_cloud_link_status()
+if cloud_status == "offline" then
+    return
+end
+if cloud_status == "disconnected" or not appcloud.test_cloud_connection() then
+	dbg.print("========= CLOUD: cloud_reconnect ==========")
+	local event = 3
+	cloud.cloud_notify(event)
+end

@@ -1,0 +1,11 @@
+[ "$ACTION" == "update" -a "$INTERFACE" == "lan" ]  && {
+	[ -n "$DEVICE" ] && {
+		uci_toggle_state network "$INTERFACE" device "$DEVICE"
+	}
+}
+
+[ "$ACTION" == "clear" -a "$INTERFACE" == "lan" ]  && {
+	uci_revert_state network "$INTERFACE" device
+}
+
+

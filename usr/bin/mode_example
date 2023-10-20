@@ -1,0 +1,16 @@
+#!/usr/bin/lua
+
+local dbg   = require "luci.tools.debug"
+local mode = require "luci.model.mode"
+
+if mode.is_iot_support() == true then
+	dbg.print("support iot")
+else
+	dbg.print("not support iot ")
+end
+
+if mode.is_tri_band_support() == true then
+	dbg.print("support tri_band")
+else
+	dbg.print("not support tri_band")
+end

@@ -1,0 +1,15 @@
+#!/usr/bin/lua
+
+-- clean new_client and inet error msg
+
+local dbg   = require "luci.tools.debug"
+local cloud = require "luci.controller.admin.mobile_app.cloud"
+
+dbg.print("update_monthly_msg")
+
+local form = {}
+form.form = "message"
+form.operation = "update"
+    
+cloud.dispatch(form)
+

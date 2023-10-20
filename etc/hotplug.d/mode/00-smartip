@@ -1,0 +1,60 @@
+#!/bin/sh
+
+if [ "$SRCMODE" = "RE" ] && [ "$DSTMODE" = "HAP" ]; then
+    MODE=RE2HAP
+elif [ "$SRCMODE" = "RE" ] && [ "$DSTMODE" = "FAP" ]; then
+    MODE=RE2FAP
+elif [ "$SRCMODE" = "FAP" -o "$SRCMODE" = "HAP" ] && [ "$DSTMODE" = "RE" ]; then
+    MODE=AP2RE
+elif [ "$SRCMODE" = "HAP" ] && [ "$DSTMODE" = "FAP" ]; then
+    MODE=HAP2FAP
+elif [ "$SRCMODE" = "FAP" ] && [ "$DSTMODE" = "HAP" ]; then
+    MODE=FAP2HAP
+elif [ "$SRCMODE" = "NONE" ] && [ "$DSTMODE" = "HAP" ]; then
+    MODE=NONE2HAP
+elif [ "$SRCMODE" = "NONE" ] && [ "$DSTMODE" = "FAP" ]; then
+    MODE=NONE2FAP
+elif [ "$SRCMODE" = "NONE" ] && [ "$DSTMODE" = "RE" ]; then
+    MODE=NONE2RE
+fi
+
+if [ "$CAPSRCTYPE" = "HAP" ] && [ "$CAPDSTTYPE" = "FAP" ]; then
+    CAPTYPE=HAP2FAP
+elif [ "$CAPSRCTYPE" = "FAP" ] && [ "$CAPDSTTYPE" = "HAP" ]; then
+    CAPTYPE=FAP2HAP
+elif [ "$CAPSRCTYPE" = "HAP" ] && [ "$CAPDSTTYPE" = "HAP" ]; then
+    CAPTYPE=HAP2HAP
+elif [ "$CAPSRCTYPE" = "FAP" ] && [ "$CAPDSTTYPE" = "FAP" ]; then
+    CAPTYPE=FAP2FAP
+fi
+
+case "$POINT" in
+    BEGIN)
+        case "$MODE" in
+            RE2HAP) ubus send smartip '{"action":2,"status":3}';;
+            RE2FAP) ubus send smartip '{"action":2,"status":4}';;
+            AP2RE) ubus send smartip '{"action":2,"status":5}';;
+            HAP2FAP) ubus send smartip '{"action":2,"status":6}';;
+            FAP2HAP) ubus send smartip '{"action":2,"status":7}';;
+        esac
+        ;;
+    END)
+        case "$MODE" in
+            NONE2HAP) ubus send smartip '{"action":2,"status":8}';;
+            NONE2FAP) ubus send smartip '{"action":2,"status":9}';;
+            NONE2RE) ubus send smartip '{"action":2,"status":10}';;
+        esac
+        ;;
+    CAPTYPECHANGE)
+        case "$CAPTYPE" in
+            HAP2FAP) ubus send smartip '{"action":2,"status":11}';;
+            FAP2HAP) ubus send smartip '{"action":2,"status":12}';;
+            HAP2HAP) ubus send smartip '{"action":2,"status":13}';;
+            FAP2FAP) ubus send smartip '{"action":2,"status":14}';;
+        esac
+        ;;    
+    CAPIPCHANGE)
+        ubus send smartip '{"action":2,"status":15}';;
+    CAPDNSCHANGE)
+        ubus send smartip '{"action":2,"status":18}';;
+esac

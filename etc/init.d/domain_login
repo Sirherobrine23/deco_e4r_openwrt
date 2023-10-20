@@ -1,0 +1,63 @@
+#!/bin/sh /etc/rc.common
+
+START=69
+
+. /lib/domain_login/domain_login_log.sh
+. /lib/domain_login/domain_login_core.sh
+
+RUNTIME_LAN_IP_PATH=/tmp/runtime_ip_info_lan
+lanip="192.168.68.1"
+default_mask="255.255.255.0"
+
+start() {
+	local addr=
+	local mask=
+	local tpdomain=
+	local enabled=
+
+	config_load domain_login
+	config_get enabled "tp_domain" conflict
+	
+	[ "$enabled" = "on" ] && {
+		config_get addr "tp_domain" old_addr
+		config_get mask "tp_domain" old_mask
+		#config_get tpdomain "tp_domain" domain
+		tpdomain=$(uci get profile.@domain_login[0].domain -c /etc/profile.d)
+		#echo "_tp_domain : $tpdomain" > /dev/console
+		
+    	dlogin_tip_install $addr $mask "$tpdomain"
+    }
+    
+	return 0
+}
+
+stop() {
+	local dns_mod=$(lsmod|grep -o "domain_dns")
+    [ -n "$dns_mod" ] && rmmod domain_dns
+    local tip_mod=$(lsmod|grep -o "domain_tip")
+    [ -n "$tip_mod" ] && rmmod domain_tip
+}
+
+restart() {
+	local new_ip=
+	local mask=
+	local tpdomain=
+	local enabled=
+	local tmp_fapip=
+
+	config_get enabled "tp_domain" conflict
+	
+	[ "$enabled" = "on" ] && {
+		tpdomain=$(uci get profile.@domain_login[0].domain -c /etc/profile.d)
+
+		if [ -f $RUNTIME_LAN_IP_PATH ]; then
+			new_ip=$(cat $RUNTIME_LAN_IP_PATH|awk -F '"lan_ip":' '{print $2}' | cut -d\" -f2)
+			mask=$(cat $RUNTIME_LAN_IP_PATH|awk -F '"lan_mask":' '{print $2}' | cut -d\" -f2)
+		else
+			new_ip=$lanip
+			mask=$default_mask
+		fi
+		dlogin_iface_event "$DLOGIN_LAN_IFACE" "$new_ip" &
+		dlogin_tip_install $new_ip $mask "$tpdomain"
+	}
+}

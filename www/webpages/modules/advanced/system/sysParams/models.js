@@ -1,0 +1,1 @@
+!function(e){e.su.modelManager.define("wanUnicastM",{type:"model",fields:[{name:"is_dhcp",disabled:!0},{name:"enable_unicast"}],proxy:{url:e.su.url("/admin/network?form=dhcp_dial")}}),e.su.modelManager.define("igmpFeatureM",{type:"model",fields:[{name:"enable_join_igmpv3"}],proxy:{url:e.su.url("/admin/network?form=igmp_setting")}})}(jQuery);

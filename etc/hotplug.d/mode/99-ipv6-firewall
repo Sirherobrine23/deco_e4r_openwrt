@@ -1,0 +1,13 @@
+#!/bin/sh
+
+reload_firewall() {
+        /etc/init.d/ipv6-firewall stop
+        sleep 5
+        /etc/init.d/ipv6-firewall start
+}
+
+if [ "$POINT" == "END" -a "$DSTMODE" == "FAP" ]; then
+	reload_firewall &
+elif [ "$POINT" == "END" -a "$DSTMODE" == "RE" ]; then
+	/etc/init.d/ipv6-firewall stop &
+fi

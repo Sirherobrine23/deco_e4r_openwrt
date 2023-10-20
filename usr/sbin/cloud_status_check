@@ -1,0 +1,292 @@
+#!/usr/bin/lua
+
+-- revised for m5, wangian, 2016-08-31
+
+local uci   = require "luci.model.uci"
+local sys   = require "luci.sys"
+local fs    = require "luci.fs"
+local dbg   = require "luci.tools.debug"
+local logm   = require "luci.model.log"
+local appcloud = require "luci.model.app_cloudfirm"
+local network_mgmt = require "cloud_req.device_manage"
+local sync = require "luci.model.sync"
+
+local uci_r = uci.cursor()
+
+local CLOUD_TMP_DIR = "/tmp/cloud"
+local CLOUD_STATUS_FILE = CLOUD_TMP_DIR .. "/cloud_status_check_done"
+
+local MAX_CHECK_TIME = 3
+local MIN_CHECK_INTERVAL = 3
+
+local CLOUD_STATUS_LOCK = "/var/run/cloud_status.lock"
+local RWLocker = require("luci.model.locker").RWLocker
+
+-- add lock
+local locker = RWLocker(CLOUD_STATUS_LOCK)
+locker:wlock()
+
+local function dbg_print(str)
+    dbg.print(str)
+    logm.sys_info("cloud", str)
+end
+
+-- check account status
+local reset = false
+local sync_ver = uci_r:get("sync", "config", "version")
+local group = sync.read_group_info()
+if tonumber(sync_ver) < 1 then
+	if not group or not group.gid or group.gid == "" then
+	    reset = true
+	end
+end
+
+local function sync_cloud_info(new_bind)
+    -- upload feature info for sync after reboot, just once
+    appcloud.cloud_update_feature_info()
+
+    -- check dst rules
+    local sname = uci_r:get_first("systime", "system", nil, nil)
+    local dstrule_num = uci_r:get("systime", sname, "dstrule_num")
+    if not dstrule_num or new_bind == true then
+        dbg_print("=== ERROR: dstrule info is cleaned, fetch again ===")
+        local times = require "luci.model.app_timesetting"
+        times.ts_update_dst()
+        sys.exec("/lib/time_settings/set_time")
+    end
+end
+
+-- check account status just once
+if fs.access(CLOUD_STATUS_FILE) then
+	dbg_print("========== CLOUD: account status check is done before =========")
+
+	-- check if device feature info	is updated
+    if reset or group and group.role and group.role == "RE" then
+        locker:ulock()
+        return
+    end
+    sync_cloud_info()
+
+	locker:ulock()
+	return
+end
+
+local function transfer_user_list()
+    local device_id = uci_r:get("cloud_config", "device_status", "inherit_id")
+    if not device_id or device_id == "" then
+        return true
+    end
+    local cloud_copyUser = require "cloud_req.cloud_copyUser"
+    local ret, data = cloud_copyUser.copy_user_list(device_id)
+    if not ret or tonumber(ret) ~= 0 or tonumber(data.http_scode) ~= 200 then
+        return false
+    end
+    local error_code = tonumber(data.error_code)
+    if error_code == 0 or error_code == -20501 or error_code == -20506 or error_code == -20507 then
+        return true
+    end
+    return false
+end
+
+local function retry_several_times(func)
+    local check_time = 0
+    local check_interval = MIN_CHECK_INTERVAL
+    while true do
+        local ret = func()
+        if ret then
+            return true
+        elseif check_time < MAX_CHECK_TIME then
+            sys.call("sleep %d" % check_interval)
+            check_interval = check_interval * 2
+            check_time = check_time + 1
+        else
+            return false
+        end
+    end
+end
+
+local function unbind_device(username)
+    local check_time = 0
+    local check_interval = MIN_CHECK_INTERVAL
+    while true do
+        local error_code = network_mgmt.unbind_deviceWithFeatureInfo(username)
+        if error_code == 0 then
+            return true
+        elseif check_time < MAX_CHECK_TIME then
+            sys.call("sleep %d" % check_interval)
+            check_interval = check_interval * 2
+            check_time = check_time + 1
+        else
+            return false
+        end
+    end
+end
+
+local function clear_need_unbind()
+    local need_unbind = uci_r:get("cloud_config", "device_status", "need_unbind")
+    if tonumber(need_unbind) == 1 then
+        uci_r:set("cloud_config", "device_status", "need_unbind", "0")
+        uci_r:delete("cloud_config", "owner")
+        uci_r:commit("cloud_config")
+    end
+end
+
+local function set_need_unbind(username)
+    local need_unbind = uci_r:get("cloud_config", "device_status", "need_unbind")
+    if tonumber(need_unbind) ~= 1 then
+        uci_r:set("cloud_config", "device_status", "need_unbind", "1")
+        uci_r:section("cloud_config", "cloud_account", "owner", {username = username})
+        uci_r:commit("cloud_config")
+    end
+end
+
+local function clear_need_wait()
+    local wait_new_ap_bind = uci_r:get("cloud_config", "device_status", "need_wait")
+    if wait_new_ap_bind and wait_new_ap_bind == "1" then
+        uci_r:set("cloud_config","device_status","need_wait","0")
+        uci_r:commit("cloud_config")
+    end
+end
+
+
+local function bind_to_cloud()
+    dbg_print("=== INFO: account bind to cloud now ===")
+    local cloud_module = require "luci.controller.admin.mobile_app.cloud"
+    local bind_table = {}
+    bind_table.form = "system"
+    bind_table.operation = "bind"
+    local res = cloud_module.dispatch(bind_table)
+    return res
+end
+
+local check_done = false
+local check_time = 0
+local check_interval = MIN_CHECK_INTERVAL
+
+local username
+while not check_done do
+	local res, info = appcloud.get_username_from_cloud()
+	if res then
+		check_done = true
+		username = info
+	elseif check_time < MAX_CHECK_TIME then
+		sys.call("sleep %d" % check_interval)
+		check_interval = check_interval * 2
+		check_time = check_time + 1
+	else
+		locker:ulock()
+		return
+	end
+end
+
+if reset or (group and group.role and group.role == "RE") then
+    if reset and username and not unbind_device(username) then
+        dbg_print("========== CLOUD: reset need to unbind later =========")
+        set_need_unbind(username)
+        locker:ulock()
+        return
+    end
+    if reset then
+        clear_need_unbind()
+    end
+	local need_bind = uci_r:get("cloud_config", "device_status", "need_bind")
+    if need_bind and tonumber(need_bind) == 1 then
+        if username and not unbind_device(username) then
+            dbg_print("========== CLOUD: unbind fail bind later =========")
+            set_need_unbind(username)
+            locker:ulock()
+            return
+        end
+        if not bind_to_cloud() then
+            dbg_print("========== CLOUD: bind fail retry later =========")
+            locker:ulock()
+            return
+        end
+    end
+    if not retry_several_times(network_mgmt.clear_deviceFeatureInfo) then
+        locker:ulock()
+        return
+    end
+    dbg_print("========== CLOUD: RE clear feature info success =========")
+    sys.call("touch %s" % CLOUD_STATUS_FILE)
+    -- stop cloud
+    sys.fork_call("sleep 1; /etc/init.d/cloud_brd stop &")
+    locker:ulock()
+    return
+end
+
+
+clear_need_wait()
+if username then
+	-- binded state, check cloud status
+    -- binded in cloud then reset and binded in local now we need update bind info cloud
+    local new_bind = false
+	local need_bind = uci_r:get("cloud_config", "device_status", "need_bind")
+    if need_bind and tonumber(need_bind) == 1 then
+        if unbind_device(username) then
+            clear_need_unbind()
+        else
+            locker:ulock()
+            return
+        end
+        if bind_to_cloud() then
+            new_bind = true
+        end
+    end
+
+    if new_bind then
+        local bind_status = uci_r:get("cloud_config", "device_status", "bind_status")
+        if tonumber(bind_status) ~= 1 then
+            uci_r:set("cloud_config", "device_status", "bind_status", "1")
+            uci_r:commit("cloud_config")
+        end
+        sync_cloud_info(new_bind)
+    end
+else
+	-- device unbinded in cloud, reset and reboot
+	local need_bind = uci_r:get("cloud_config", "device_status", "need_bind")
+    if not need_bind or tonumber(need_bind) == 0 then
+        dbg_print("=== ERROR: account unbinded in cloud, do nothing ===")
+        -- appcloud.config_factory(true)
+        locker:ulock()
+        return
+    elseif need_bind and tonumber(need_bind) == 1 then
+        dbg_print("=== INFO: account bind to cloud now ===")
+        if bind_to_cloud() then
+            sync_cloud_info(true)
+        end
+    end
+end
+
+local need_bind = uci_r:get("cloud_config", "device_status", "need_bind")
+if need_bind and tonumber(need_bind) == 1 then
+    locker:ulock()
+    return
+end
+
+local need_transfer = uci_r:get("cloud_config", "device_status", "need_transfer")
+
+if need_transfer and tonumber(need_transfer) == 1 then
+    dbg_print("=== INFO: need transfer user list ===")
+    if not retry_several_times(transfer_user_list) then
+        dbg_print("=== INFO: transfer user list fail wait to try again ===")
+        locker:ulock()
+        return
+    end
+    uci_r:set("cloud_config", "device_status", "need_transfer", "0")
+    uci_r:commit("cloud_config")
+end
+
+
+if not fs.isdirectory(CLOUD_TMP_DIR) then
+    fs.mkdir(CLOUD_TMP_DIR, true)
+end
+sys.call("touch %s" % CLOUD_STATUS_FILE)
+
+--upload feature info for google assistant
+local support_mode = require "luci.model.mode"
+if support_mode.is_smart_home_support and support_mode.is_smart_home_support()then
+    local smart_home_upload = require "cloud.smart_home.smart_home_upload"
+    smart_home_upload.upload_module_list(true)
+end
+locker:ulock()

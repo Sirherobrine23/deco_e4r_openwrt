@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+
+START=50
+
+USE_PROCD=1
+AC_LIBDIR=/lib/access_client
+
+PROG=/usr/bin/access_client
+
+local TEMP_UCI_PATH=/tmp/tmp-device-config
+local ACC_UCI_FILE=/tmp/tmp-device-config/access_client
+
+start_service() {
+	if [ ! -f $ACC_UCI_FILE ]; then
+		if [ ! -d $TEMP_UCI_PATH ]; then
+			mkdir $TEMP_UCI_PATH
+		fi
+		cp /etc/config/access_client $TEMP_UCI_PATH
+	fi
+	
+	$AC_LIBDIR/set_access_client	
+	
+	procd_open_instance    
+	procd_set_param command "$PROG"    
+	procd_set_param respawn    
+	procd_close_instance
+}
+
+reload_service() {
+	# reload client_mgmt to access_client
+	$AC_LIBDIR/set_access_client		
+}
+
+service_triggers() {
+    procd_add_reload_trigger "client_mgmt"
+}

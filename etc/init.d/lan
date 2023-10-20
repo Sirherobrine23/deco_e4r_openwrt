@@ -1,0 +1,26 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=45
+
+BR_NAME=br-lan
+
+boot() {
+
+	#local lanip=''
+	#lanip=$(/sbin/ifconfig br-lan | sed -n '/inet addr/s/^[^:]*:\([0-9.]\{7,15\}\) .*/\1/p')
+	#if [ "$lanip" != "" ]; then
+	#	echo "=== ip addr del $lanip dev br-lan start" > /dev/console
+	#	ip addr del $lanip dev br-lan
+	#	echo "=== ip addr del $lanip dev br-lan end" > /dev/console
+	#fi
+#	ifconfig lo 127.0.0.1 up
+#	ifconfig eth1 up
+#	brctl addbr ${BR_NAME}
+#	ifconfig ${BR_NAME} up]
+	brctl setfd ${BR_NAME} 0
+#	brctl addif ${BR_NAME} eth1
+#	ifconfig ${BR_NAME} 192.168.0.254
+	brctl stp ${BR_NAME} off
+}
+ 

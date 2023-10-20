@@ -1,0 +1,60 @@
+#!/usr/bin/lua
+
+local sys   = require "luci.sys"
+local nixio = require "nixio"
+local dbg   = require "luci.tools.debug"
+local clientmgmt = require "luci.model.app_clientmgmt"
+local support_mode = require "luci.model.mode"
+local io    = require "io"
+
+local mac = arg[1]
+local action = arg[2]
+local guest = arg[3]
+local time = arg[4]
+
+local function client_access_handle_iot(client_mac, client_action, guest, time)
+	dbg.print("client_access_handle iot called.")
+	dbg.print("%s %s %s at %s." % {client_mac, client_action, guest, tostring(time)})
+	local client = {}
+	client.mac = client_mac
+	client.action = client_action
+	client.guest = guest
+	client.time = tonumber(time) or os.time()
+	
+	local ret = clientmgmt.client_access_handle(client)
+	if not ret then
+		return false
+	end
+
+	return	true
+end
+
+local function client_access_handle(client_mac, client_action, guest)
+	dbg.print("client_access_handle called.")
+	local client = {}
+	client.mac = client_mac
+	client.action = client_action
+	client.guest = guest
+	
+	local ret = clientmgmt.client_access_handle(client)
+	if not ret then
+		return false
+	end
+
+	return	true
+end
+
+if mac and action and guest then
+	local ret
+	if support_mode.is_iot_support() == false then
+        ret = client_access_handle(mac, action, guest)
+    else
+    	ret = client_access_handle_iot(mac, action, guest, time)
+    end
+	
+	if ret ~= true then
+		dbg.print("client_access_handle: fail to handle client access.")
+	end
+else
+	dbg.print("client_access_handle: invalid args.")
+end

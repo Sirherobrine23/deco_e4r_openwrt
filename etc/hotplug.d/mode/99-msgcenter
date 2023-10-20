@@ -1,0 +1,5 @@
+#!/bin/sh
+
+[ "$SRCMODE" = "FAP" -a "$DSTMODE" = "HAP" ] && exit 0
+
+[ "$POINT" == "END" ] && /etc/init.d/msgcenter restart

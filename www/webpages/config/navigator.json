@@ -1,0 +1,42 @@
+[
+    {
+        "name": "networkMap",
+        "text": "NETWORK_MAP"
+    },
+    {
+        "name": "advanced",
+        "text": "ADVANCED",
+        "children": [
+            {
+                "name": "networkStatus",
+                "text": "STATUS"
+            },
+            {
+                "name": "system",
+                "text": "SYSTEM",
+                "children": [
+                    {
+                        "name": "firmwareDeco",
+                        "text": "FIRMWARE"
+                    },
+                    {
+                        "name": "sysLog",
+                        "text": "SYSTEM_LOG"
+                    },
+                    {
+                        "name": "timeSettings",
+                        "text": "TIME_SETTINGS"
+                    },
+                    {
+                        "name": "reboot",
+                        "text": "REBOOT"
+                    },
+                    {
+                        "name": "sysParams",
+                        "text": "SYSPARAMS"
+                    }
+                ]
+            }
+        ]
+    }
+]

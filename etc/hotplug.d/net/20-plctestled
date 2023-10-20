@@ -1,0 +1,21 @@
+#! /bin/sh
+#
+# 20-plctestled.sh
+# Copyright (C) 2019 tpuser <tpuser@liushuaiwei>
+#
+# Distributed under terms of the MIT license.
+#
+
+
+if [[ "$(uci get leds.settings.mode)" = "test" ]] && [[ "$INTERFACE" = "eth2" ]]; then
+    case $ACTION in
+        remove )
+            ubus call leds switch '{"state":"off"}'
+            ;;
+        add )
+            ubus call leds power '{"state":"on"}'
+            ubus call leds switch '{"state":"on"}'
+            ubus call leds conn '{"state":"online"}'
+            ;;
+    esac
+fi

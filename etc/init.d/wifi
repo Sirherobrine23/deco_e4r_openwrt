@@ -1,0 +1,93 @@
+#!/bin/sh /etc/rc.common
+
+START=41
+STOP=90
+mtd_name=`cat /proc/mtd | grep "art" | grep -o "mtd."`
+
+USE_PROCD=1	
+
+. /lib/wifi/wificommon.sh
+
+MAX_TRY_COUNT=4800 # 1 day
+TRY_INTERNVAL=5
+
+start_service() {
+	# echo 3 > /proc/sys/vm/drop_caches
+	[ -c /dev/dk0 ] || mknod /dev/dk0 c 63 0
+	[ -c /dev/dk1 ] || mknod /dev/dk1 c 63 1
+	[ -L /dev/caldata ] || ln -s /dev/${mtd_name} /dev/caldata
+    
+	if [ "$(/sbin/is_cal)" = "true" ]; then
+		touch /tmp/wifi_is_cal
+		wifi_init_wifi_mac
+	else
+		local vlan_support=$(uci get profile.switch.switch_vlan -c /etc/profile.d)
+		local phy_port_1=$(uci get profile.switch.phy_port_1 -c /etc/profile.d)
+		local phy_port_2=$(uci get profile.switch.phy_port_2 -c /etc/profile.d)
+	 	#close led
+		echo "0" > /sys/class/leds/ap152:red/brightness
+		echo "0" > /sys/class/leds/ap152:green/brightness
+		echo "0" > /sys/class/leds/ap152:blue/brightness
+        #up phy port
+		local plc_support=$(uci -c /etc/profile.d get profile.switch.plc_support)
+		if [ -n "$plc_support" ] && [ "yes" == "$plc_support" ]; then
+	                uci -c /etc/vlan.d set vlan.@switch_vlan[0].ports="0t 2 3 5"
+        	        uci -c /etc/vlan.d set vlan.@switch_vlan[0].vlan="1"
+                	uci -c /etc/vlan.d set vlan.@switch_vlan[0].vid="3"
+
+	                uci -c /etc/vlan.d set vlan.@switch_vlan[1].ports="0t 1 4"
+        	        uci -c /etc/vlan.d set vlan.@switch_vlan[1].vlan="2"
+                	uci -c /etc/vlan.d set vlan.@switch_vlan[1].vid="4"
+
+	                uci commit -c /etc/vlan.d
+			ssdk_sh debug phy set 4 0 0x1240 2>&1 1>/dev/null
+		fi
+		ssdk_sh debug phy set $phy_port_1 0 0x1240 2>&1 1>/dev/null
+		ssdk_sh debug phy set $phy_port_2 0 0x1240 2>&1 1>/dev/null
+		if [ "$vlan_support" == "yes" ]; then
+			swconfig dev eth0 load /etc/vlan.d/vlan
+		fi
+		#/etc/init.d/qcmbr restart
+        /usr/sbin/qcmbr_run &
+		cd /etc/rc.d
+		for file in *
+		do
+			num=`echo $file|cut -c2-3`
+			if [ $num -gt 41 ] 
+			then
+					rm -f $file
+			fi
+		done
+
+                # get art lib by tftp and run nart
+                local flag=0
+                for i in `seq $MAX_TRY_COUNT`;
+                do
+                        cd /tmp
+                        echo "download art tools from server..." > /dev/console
+                        tftp -g -r start_art.sh 192.168.0.100
+                        [ -s start_art.sh ] && {
+                                flag=1
+                                break
+                        }
+                        sleep $TRY_INTERNVAL
+                done
+
+                tddp &
+
+                [ $flag -eq 1 ] && {
+                        chmod 777 start_art.sh
+                        /tmp/start_art.sh 192.168.0.100 &
+                }
+
+	fi
+	return 0
+}
+
+service_triggers() {
+    procd_add_reload_trigger "wifi"
+}
+
+reload_service() {
+    /etc/init.d/repacd restart &
+}

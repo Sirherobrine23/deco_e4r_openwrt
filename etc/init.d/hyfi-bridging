@@ -1,0 +1,50 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2016 Qualcomm Atheros, Inc.
+#
+# All Rights Reserved.
+# Qualcomm Atheros Confidential and Proprietary.
+
+START=42
+
+local ieee1905managed_bridge=lan
+local ieee1905managed_bridge2=guest
+
+start() {
+	[ ! -d /sys/class/net/br-$ieee1905managed_bridge ] && \
+		brctl addbr br-$ieee1905managed_bridge
+	[ ! -d /sys/class/net/br-$ieee1905managed_bridge2 ] && \
+		brctl addbr br-$ieee1905managed_bridge2
+
+	# Enable hyfi-netfilter
+	if [ -f /proc/sys/net/bridge/bridge-nf-call-custom ]; then
+		sysctl -w net.bridge.bridge-nf-call-custom=1
+	fi
+
+	# Bail out from starting hyd if attach fails.
+	if ! hyctl attach br-$ieee1905managed_bridge; then
+		stop
+		return 1
+	fi
+
+	if [ -n "$ieee1905managed_bridge2" ];then
+	    if ! hyctl attach br-$ieee1905managed_bridge2; then
+			stop
+			return 1
+	    fi
+	fi
+
+	local device_type
+	config_load repacd
+	config_get device_type repacd DeviceType 'RE'
+	ubus send apsd.configure '{"mode":"'"$device_type"'"}'
+}
+
+stop() {
+	# Disable hyfi-netfilter
+	hyctl detach br-$ieee1905managed_bridge
+
+	if [ -n "$ieee1905managed_bridge2" ]; then
+	    hyctl detach br-$ieee1905managed_bridge2
+	fi
+
+}

@@ -1,0 +1,97 @@
+#!/usr/bin/lua
+local uci   = require "luci.model.uci"
+local sys   = require "luci.sys"
+local fs    = require "luci.fs"
+local dbg   = require "luci.tools.debug"
+local uci_r = uci.cursor()
+local json   = require "luci.json"
+
+local link_status_file = {
+    "/tmp/wifi_runtime_info.2g",
+    "/tmp/wifi_runtime_info.5g",
+    "/tmp/eth_runtime_info",
+    "/tmp/plc_runtime_info",
+}
+
+local MAX_CHECK_INTERVAL = 60
+local INIT_CHECK_INTERVAL = 2
+
+local function device_is_reset()
+    -- check reset status
+    local reset = false
+    local sync = require "luci.model.sync"
+    local group = sync.read_group_info()
+    local sync_ver = uci_r:get("sync", "config", "version")
+    if tonumber(sync_ver) < 1 then
+        if not group or not group.gid or group.gid == "" then
+            dbg("device is reset now return")
+            return true
+        end
+    end
+    if not group.role or group.role ~= "RE" then
+        return true
+    end
+    return false
+end
+
+local function check_link_status(status_file)
+    if not status_file then
+        return false
+    end
+    local fp = io.open(status_file)
+    if not fp then
+        return false
+    end
+    local data = json.decode(fp:read("*a"))
+    if data and data.status and tonumber(data.status) == 1 then
+        return true
+    end
+    return false
+end
+
+local function check_link_status_all()
+    for i,v_r in ipairs(link_status_file) do 
+        if check_link_status(v_r) then
+            return true
+        end
+    end
+    return false
+end
+
+local function wait_link_status_ready()
+    local check_interval = INIT_CHECK_INTERVAL
+    local status = check_link_status_all()
+    while not check_link_status_all() do 
+		sys.call("sleep %d" % check_interval)
+        if check_interval < MAX_CHECK_INTERVAL then
+            check_interval = check_interval + check_interval
+        end
+    end
+end
+
+local function update_ts_info()
+    local check_interval = INIT_CHECK_INTERVAL
+    local app_timesetting = require "luci.model.app_timesetting"
+    while not app_timesetting.ts_request_dst() do
+		sys.call("sleep %d" % check_interval)
+        if check_interval < MAX_CHECK_INTERVAL then
+            check_interval = check_interval + check_interval
+        end
+    end
+    sys.fork_call("/lib/time_settings/set_time")
+end
+
+local function main()
+    if device_is_reset() then
+        return true
+    end
+    -- wait link status changed
+    wait_link_status_ready()
+    -- update ts config
+    update_ts_info()
+    
+end
+
+
+main()
+

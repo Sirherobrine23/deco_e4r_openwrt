@@ -1,0 +1,112 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+. /lib/functions.sh
+
+interface="$2"
+[ -z "$interface" ] && interface="lan"
+
+RESERVATION_UCI_FILE="dhcp_reservation"
+RESERVATION_UCI_TYPE="reservation"
+SMARTIP_UCI_FILE="smartip_sync"
+SMARTIP_UCI_TYPE="smartip_sync"
+
+UDHCPD_CONFIG_FILE="/tmp/udhcpd_$interface.conf"
+
+#lanip of default
+lanip="192.168.0.1"
+lanmask="255.255.255.0"
+#lanip of runtime
+
+ip_num_2_str() {
+    local ipaddr=$1
+    H1=$((ipaddr & 0x000000ff))
+    H2=$(((ipaddr & 0x0000ff00) >> 8))
+    L1=$(((ipaddr & 0x00ff0000) >> 16))
+    L2=$(((ipaddr & 0xff000000) >> 24))
+    echo $L2.$L1.$H2.$H1
+}
+
+ip_str_2_num() {
+    local ip_str=$1
+    local ip_list=${ip_str//./ };
+    local result=0
+    for ip_split in $ip_list; do
+        result=$((result<<8 | ip_split))
+    done
+    echo "$result"
+}
+
+get_static_ip_addr(){
+    local ip_split=$1
+    local lan_ip=$2
+    local lan_mask=$3
+    local lan_num
+    local reserve_num
+    local mask_num
+    local subnet
+    local ipnet
+    lan_num=$(ip_str_2_num "$lan_ip")
+    reserve_num=$(ip_str_2_num "$ip_split")
+    mask_num=$(ip_str_2_num "$lan_mask")
+    subnet=$((lan_num & mask_num))
+    ipnet=$((reserve_num & ~mask_num))
+    ip_num_2_str "$((subnet | ipnet))"
+}
+
+get_lan() {
+	local section=$1
+
+    config_get value $section interface
+    [ "$value" != "$interface" ] && return	
+	
+	config_get value $section lanip
+	lanip=$value
+	config_get value $section mask
+	lanmask=$value
+}
+
+get_reservation_list() {
+	local section=$1
+
+    config_get value $section interface
+    [ "$value" != "$interface" ] && return	
+
+    config_get value $section enable
+
+	echo "value: $value"
+
+	if [ "$value" == "on" ]; then
+		config_get value $section mac
+		static_lease_mac=$value
+
+		config_get value $section ip
+        static_lease_ip=$(get_static_ip_addr "$value" "$lanip" "$lanmask")
+
+		echo "static_lease $static_lease_mac $static_lease_ip" >> $UDHCPD_CONFIG_FILE
+	fi
+}
+
+add_reservation_list() {
+
+    config_load $SMARTIP_UCI_FILE
+    config_foreach get_lan $SMARTIP_UCI_TYPE
+    config_clear
+
+	# clear static lease entries
+	sed -i '/static_lease/d' $UDHCPD_CONFIG_FILE
+
+	# add static lease entries
+	config_load $RESERVATION_UCI_FILE
+	config_foreach get_reservation_list $RESERVATION_UCI_TYPE
+	config_clear
+}
+
+action="$1"
+case $action in
+	add_reservation)	    add_reservation_list ;;
+	--help|help) usage;;
+	*)	    ;;
+esac
+
+exit 0

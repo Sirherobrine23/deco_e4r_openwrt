@@ -1,0 +1,7 @@
+#!/bin/sh
+[ "$ACTION" = "ifup" ] && {
+	#Reload qos when interface is internet
+	if [ "$INTERFACE" == "internet" ]; then      
+		/etc/init.d/qos reload
+	fi
+}

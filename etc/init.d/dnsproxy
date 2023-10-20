@@ -1,0 +1,31 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2017 Shenzhen TP-LINK Technologies Co.Ltd.
+
+SERVICE_DAEMONIZE=1
+
+START=53
+STOP=53
+
+start() {	
+#   disable dnsproxy in AP Mode
+	config_load sysmode
+	config_get system_mode sysmode mode "Router"
+	if [ "$system_mode" != "Router" ]; then
+		return 0
+	fi
+
+	service_start /usr/bin/dnsproxy -S
+	
+	return 0
+}
+
+stop() {
+	service_stop /usr/bin/dnsproxy
+	
+	return 0
+}
+
+restart(){
+	stop
+	start
+}

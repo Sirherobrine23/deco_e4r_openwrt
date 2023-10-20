@@ -1,0 +1,28 @@
+#! /usr/bin/env lua
+--
+-- cloud_account_modify.lua
+-- Copyright (C) 2018 tpuser <tpuser@liushuaiwei>
+--
+-- Distributed under terms of the MIT license.
+--
+
+local accmgnt = require "luci.model.accountmgnt"
+local uci = require "luci.model.uci"
+local uci_r = uci.cursor()
+
+local factorymode = uci_r:get("wifi", "ap", "factorymode") or "0"
+if factorymode and factorymode == "1" then
+	return
+end
+
+local sync = require "luci.model.sync"
+local group = sync.read_group_info()
+if not group or not group.gid or group.gid == "" then
+    return
+end
+
+if group.role == "RE" then
+    return
+end
+
+accmgnt.cloud_account_modify()

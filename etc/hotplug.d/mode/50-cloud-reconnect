@@ -1,0 +1,9 @@
+#!/bin/sh
+
+#echo "========== MODE: POINT = $POINT ===========" > /dev/console
+
+[ "$DSTMODE" = "HAP" ] && exit 0
+
+if [ "$POINT" == "END" -o "$POINT" == "CAPCHANGE" ]; then	
+    /etc/init.d/cloud_brd restart
+fi

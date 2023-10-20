@@ -1,0 +1,38 @@
+#!/bin/sh /etc/rc.common
+
+START=77
+STOP=77
+
+USE_PROCD=1
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+
+TFSTATS_MOD_ID=269
+LOG_INF_SERVICE_START=504
+LOG_INF_SERVICE_STOP=505
+
+start_service() {
+	local enable
+	config_load tfstats
+	
+	config_get enable "switch" enable
+	if [ "$enable" = "on" ]; then
+		procd_open_instance
+		procd_set_param command /usr/sbin/tfstats
+		procd_set_param respawn 600 5 5
+		procd_close_instance
+
+		logx -p $$ $TFSTATS_MOD_ID $LOG_INF_SERVICE_START
+	fi
+	return 0
+}
+
+stop_service() {
+	logx -p $$ $TFSTATS_MOD_ID $LOG_INF_SERVICE_STOP
+	return 0
+}
+
+service_triggers(){
+	procd_add_reload_trigger "tfstats"
+}

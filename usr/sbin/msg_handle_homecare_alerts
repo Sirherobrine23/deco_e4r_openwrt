@@ -1,0 +1,12 @@
+#!/usr/bin/lua
+
+-- check security and parental control alerts.
+
+local dbg   = require "luci.tools.debug"
+local msg	= require "luci.model.message_center"
+
+-- dbg.print("msg_handle_homecare_alerts")
+
+local msg_s = msg.Msgcenter()
+msg_s:handle_homecare_alerts()
+

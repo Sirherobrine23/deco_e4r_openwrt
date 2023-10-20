@@ -1,0 +1,290 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+interface="$2"
+[ -z "$interface" ] && interface="lan"
+
+SMARTIP_UCI_FILE="smartip_sync"
+SMARTIP_UCI_TYPE="smartip_sync"
+
+SYSMODE_UCI_FILE="sysmode"
+DHCPS_UCI_FILE="dhcp_server_sync"
+DHCPS_UCI_TYPE="dhcp_server_sync"
+RESERVATION_UCI_FILE="dhcp_reservation"
+RESERVATION_UCI_TYPE="reservation"
+
+SMARTIP_CONFIG_FILE="/tmp/smartipd_$interface.conf"
+SMARTIP_LANIP_FILE="/tmp/runtime_ip_$interface"
+UDHCPD_CONFIG_FILE="/tmp/udhcpd_$interface.conf"
+UDHCPD_INFO_FILE="/tmp/udhcpd_$interface.info"
+LANIP_CHANGE_FILE="/tmp/lanip_change_$interface"
+UDHCPD_PID_FILE="/tmp/udhcpd_br-$interface.pid"
+UDHCPD_LEASES_FILE="/tmp/udhcpd_br-$interface.leases"
+WANIP_CONFLICT_FILE="/tmp/wanip_conflict_$interface"
+
+ipBegin="192.168.0.100"
+ipEnd="192.168.0.250"
+lease=0
+router="192.168.0.1"
+primaryDns="0.0.0.0"
+secondary="0.0.0.0"
+lanip="192.168.0.1"
+mask="255.255.255.0"
+dns="192.168.0.1"
+static_lease_mac="00:00:00:00:00:00"
+static_lease_ip="192.168.0.1"
+sys_mode="Router"
+runtime_lanip="192.168.0.1"
+
+add() {
+	local value=$1
+	echo "$value" >> $SMARTIP_CONFIG_FILE
+}
+
+smartip_handler() {
+	local section="$1"
+	local options="gw lanip lantype mask"
+	config_get if $section interface
+	
+	if [ "$if" = "$interface" ]; then
+	    for option in $options; do
+		    config_get value $section $option
+		    add "$option=$value"
+	    done
+	fi
+}
+
+
+generate_smartipd_conf() {
+	echo -n "" > $SMARTIP_CONFIG_FILE
+
+	config_load $SMARTIP_UCI_FILE
+	config_foreach smartip_handler $SMARTIP_UCI_TYPE
+	config_clear
+}
+
+get_lanip_change() {
+	if [ -f $LANIP_CHANGE_FILE ]; then
+		read change < $LANIP_CHANGE_FILE
+		add "lanip_change=$change"
+		rm -f $LANIP_CHANGE_FILE
+	fi
+}
+
+get_lan() {
+	local section=$1
+
+    config_get value $section interface
+    [ "$value" != "$interface" ] && return	
+	
+	config_get value $section lanip
+	lanip=$value
+	config_get value $section mask
+	mask=$value
+}
+
+get_dhcps() {
+	local section=$1
+	
+	config_get value $section interface
+	[ "$value" != "$interface" ] && return
+
+	config_get value $section startIpAddress
+	ipBegin=$value
+
+	config_get value $section endIpAddress
+	ipEnd=$value
+
+	config_get value $section primaryDns
+	primaryDns=$value
+
+	config_get value $section secondaryDns
+	secondaryDns=$value
+
+	config_get value $section dhcpServer
+	echo "$value" > $UDHCPD_INFO_FILE
+
+	config_get value $section defaultGateway
+	router=$value
+
+	config_get value $section dhcpLeaseTime
+	if [ "$sys_mode" == "AP" ];then
+		lease=1
+	else
+		lease=$value
+	fi
+	let "lease = $lease * 60"
+}
+
+generate_udhcps_conf() {
+	config_load $SYSMODE_UCI_FILE
+	config_get sys_mode sysmode mode
+
+	config_load $DHCPS_UCI_FILE
+	config_foreach get_dhcps $DHCPS_UCI_TYPE
+	config_clear
+
+	config_load $SMARTIP_UCI_FILE
+	config_foreach get_lan $SMARTIP_UCI_TYPE
+	config_clear
+
+	if [ "$primaryDns" == "0.0.0.0" -a "$secondaryDns" == "0.0.0.0" ]; then
+		dns=$lanip
+	elif [ "$primaryDns" != "0.0.0.0" ]; then
+		dns=$primaryDns
+	elif [ "$secondaryDns" != "0.0.0.0" ]; then
+		dns=$secondaryDns
+	fi
+
+	echo -n "" > $UDHCPD_CONFIG_FILE
+
+cat << END		>> $UDHCPD_CONFIG_FILE
+start	     $ipBegin
+end	     $ipEnd
+opt lease    $lease
+opt dns	     $dns
+opt router   $lanip
+opt subnet   $mask
+interface    br-$interface
+max_leases   100
+auto_time    60
+lease_file   /tmp/udhcpd_br-$interface.leases
+pidfile	     /tmp/udhcpd_br-$interface.pid
+END
+
+	if test -f $SMARTIP_LANIP_FILE
+	then
+		runtime_lanip=$(cat $SMARTIP_LANIP_FILE)
+	else
+		runtime_lanip=$lanip		
+	fi
+
+	# add static lease entries
+    /usr/sbin/smartip_add_reservation_list add_reservation lan
+}
+
+generate_wan_ip_conflict() {
+
+if [ -f $WANIP_CONFLICT_FILE ]; then
+	read conflict < $WANIP_CONFLICT_FILE
+	rm -f $WANIP_CONFLICT_FILE
+
+	[ "$conflict" != "1" ] && return
+	
+	for pid in $(pidof udhcpd); do 
+		
+		cmdline=$(cat /proc/$pid/cmdline | grep $interface) 
+		if [ "$cmdline" != "" ]; then
+			kill -SIGTERM $pid
+		fi
+	done
+
+	if [ -f $UDHCPD_LEASES_FILE ]; then
+		:> $UDHCPD_LEASES_FILE
+		echo "IP conflict reload dhcp_server, clear $UDHCPD_LEASES_FILE" > /dev/console
+	fi
+fi
+
+}
+
+start() {
+
+	local lanip=''
+	lanip=$(/sbin/ifconfig br-lan | sed -n '/inet addr/s/^[^:]*:\([0-9.]\{7,15\}\) .*/\1/p')
+	if [ "$lanip" != "" ]; then
+		echo "=== ip addr del $lanip dev br-lan start" > /dev/console
+		ip addr del $lanip dev br-lan
+		echo "=== ip addr del $lanip dev br-lan end" > /dev/console
+	fi
+
+	generate_smartipd_conf
+	generate_udhcps_conf
+
+	# start smartip daemon
+	/usr/bin/smartipd -t $interface	-S
+}
+
+stop() {
+	[ -f $SMARTIP_CONFIG_FILE ] && rm -f $SMARTIP_CONFIG_FILE
+	
+    for pid in $(pidof smartipd); do 
+        cmdline=$(cat /proc/$pid/cmdline | grep $interface) 
+        if [ "$cmdline" != "" ]; then
+            kill -SIGTERM $pid
+        fi
+    done
+}
+
+restart() {
+	stop
+	generate_wan_ip_conflict
+	generate_smartipd_conf
+	get_lanip_change
+	generate_udhcps_conf
+
+	# start smartip daemon
+	/usr/bin/smartipd -t $interface -S
+}
+
+reload() {
+	##generate_udhcps_conf
+	#if test -f $SMARTIP_LANIP_FILE
+	#then
+	#	runtime_lanip=$(cat $SMARTIP_LANIP_FILE)
+	#else    
+	#	config_load $SMARTIP_UCI_FILE
+	#	config_foreach get_lan $SMARTIP_UCI_TYPE
+	#	config_clear
+	#	runtime_lanip=$lanip		
+	#fi
+#
+	## clear static lease entries
+	#sed -i '/static_lease/d' $UDHCPD_CONFIG_FILE
+#
+	## add static lease entries
+	#config_load $RESERVATION_UCI_FILE
+	#config_foreach get_reservation_list $RESERVATION_UCI_TYPE
+	#config_clear
+#
+	#for pid in $(pidof udhcpd); do 
+    #    cmdline=$(cat /proc/$pid/cmdline | grep $interface) 
+    #    if [ "$cmdline" != "" ]; then
+    #        kill -SIGUSR2 $pid
+    #    fi
+    #done
+	#only notify smartip dhcp server config change
+	ubus send smartip '{"action":2, "status":20}'
+}
+
+dhcpc() {
+	stop
+	generate_smartipd_conf
+	generate_udhcps_conf
+
+	# start smartip daemon
+	/usr/bin/smartipd -t $interface -c
+}
+
+dhcpd() {
+	stop
+	generate_smartipd_conf
+	generate_udhcps_conf
+
+	# start smartip daemon
+	/usr/bin/smartipd -t $interface -d
+}
+
+action="$1"
+case $action in
+	start)	    start ;;
+	stop)	    stop ;;
+	restart)    restart ;;
+	reload)	    reload ;;
+	dhcpc)		dhcpc ;;
+	dhcpd)		dhcpd ;;
+	*)	    ;;
+esac
+
+exit 0
+

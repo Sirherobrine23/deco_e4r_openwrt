@@ -1,0 +1,108 @@
+#!/bin/sh /etc/rc.common
+
+
+START=99
+STOP=99
+USE_PROCD=1
+DEBUG_OUTOUT=1
+DEBUG_LEVEL=6
+
+. /lib/guest-eth/guest-eth.sh
+
+myself="guest_eth"
+
+fap_mac=""
+
+get_fap_mac(){
+    local section=$1
+    local value
+    local role
+
+    config_get value $section mac
+    config_get role $section role
+    echo "mac:$value" > /dev/console
+    echo "role:$role" > /dev/console
+    if [ "$role" = "AP" ]; then
+        fap_mac="$value"
+    fi
+    
+}
+
+guest_eth_echo() {
+    if [ "$DEBUG_OUTOUT" -gt 0 ]; then
+            logger -p $DEBUG_LEVEL "${1} $2"
+    fi
+}
+
+start_service() {
+        guest_eth_echo guest-eth "start_service " 
+        /etc/init.d/$myself reload "bind"
+}
+
+service_triggers() {
+        procd_open_trigger
+        procd_add_config_trigger "config.change" "wifi" /etc/init.d/$myself reload "wifi"
+        procd_add_config_trigger "config.change" "bind_device_list" /etc/init.d/$myself reload "bind"
+        procd_close_trigger
+}
+
+reload_service() {
+    device_id=$(getfirm DEV_ID)
+    config_load bind_device_list
+    config_get device_type $device_id role "RE"
+
+    config_load wifi
+    config_get guest_vlan_id guest vlan_id "0"
+    config_get guest_vlan_enable guest vlan_enable "0"
+    config_get guest_enable guest enable "0"
+
+    if [ "$1" == "wifi" ]; then
+        guest_eth_echo guest-eth "[trigger]wifi config has changed, check vlan "
+        if [ "$guest_vlan_id" != "0" -a "$guest_vlan_enable" != "0" ]; then
+            guest_eth_echo guest-eth "guest vlan enable, guest_vlan id is ${guest_vlan_id}"
+            local old_vlan_id=`cat /tmp/eth_vlan_id`
+            if [ "$old_vlan_id" != "$guest_vlan_id" ]; then
+                guest_eth_echo guest-eth "guest vlan id is changed ${old_vlan_id} -> ${guest_vlan_id}, restart apsd and switch "
+                /etc/init.d/apsd restart
+                switch_guest_config $device_type $guest_vlan_enable $guest_vlan_id $guest_enable
+            fi
+        fi
+    elif [ "$1" == "bind" ]; then
+        guest_eth_echo guest-eth "reload bind "
+
+        if [ "$guest_vlan_id" != "0" -a "$guest_vlan_enable" != "0" ]; then
+            guest_eth_echo guest-eth "guest vlan enable, guest_vlan id is valid  " 
+            switch_guest_config $device_type $guest_vlan_enable $guest_vlan_id $guest_enable
+        fi
+
+        config_load bind_device_list
+        config_foreach get_fap_mac "device"
+        config_clear
+        fap_mac=${fap_mac//-/:}
+        echo "update fap: $fap_mac" > /dev/console
+
+        if [ -f "/proc/hyfi_filter/fap_mac"  ]; then
+            echo ${fap_mac:-00:00:00:00:00:00} > /proc/hyfi_filter/fap_mac
+        fi
+
+    elif [ "$1" == "clear" ]; then
+        guest_eth_echo guest-eth "reload clear "
+        switch_guest_clear
+        if [ "$2" == "full" ]; then
+            guest_eth_echo guest-eth "reload clear, restart apsd "
+            /etc/init.d/apsd restart
+        fi
+    elif [ "$1" == "gw" ]; then
+        guest_eth_echo guest-eth "reload gw "
+        if [ -n "$2" ]; then
+            local gw_ip="$2"
+            local gw_mac
+            ping -W 2 "$gw_ip" -c 1 >/dev/null
+            gw_mac=`cat /proc/net/arp | grep -w "$gw_ip" | awk '{print $4}'`
+            if [ -n "$gw_mac" ]; then
+                echo "guest reload gw mac : $gw_mac" > /dev/console
+                echo "$gw_mac" > /proc/hyfi_filter/gw_mac
+            fi
+        fi
+    fi
+}

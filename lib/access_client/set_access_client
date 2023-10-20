@@ -1,0 +1,10 @@
+#!/usr/bin/lua
+
+local uci   = require "luci.model.uci"
+local dbg   = require "luci.tools.debug"
+local client = require "luci.model.app_clientmgmt"
+
+-- update client_mgmt to access_client in TEMP_UCI_PATH
+client.update_access_client_info()
+-- update latest parameter to TEMP_UCI_PATH
+client.init_access_client_info()

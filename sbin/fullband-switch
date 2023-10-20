@@ -1,0 +1,33 @@
+#!/usr/bin/lua
+
+local Locker = require("luci.model.locker").Locker
+local cfg = require "luci.sys.config"
+local ctl = require "luci.model.controller"
+local uci = require "luci.model.uci"
+
+local CONFIG_LOCK = "/var/run/config.lock"
+
+local file, err = io.open("/tmp/fullband_is_0")
+
+if file == nil then
+	local uci_r = uci.cursor()
+
+	local locker = Locker(CONFIG_LOCK)
+	locker:lock()
+
+	local fullband = uci_r:get("wifi", "ap", "fullband")
+	
+	if fullband ~= "0" then
+		uci_r:set("wifi", "ap", "fullband", "0")
+		uci_r:rawcommit("wifi")
+		cfg.saveconfig("user-config")
+	end
+
+	locker:close()
+
+	if fullband ~= "0" then
+		ctl.uci_apply()
+	end
+
+	os.execute("touch /tmp/fullband_is_0")
+end

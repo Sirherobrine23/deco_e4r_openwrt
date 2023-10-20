@@ -1,0 +1,6 @@
+#!/usr/bin/lua
+
+-- get tm signature from cloud and update.
+
+local security = require "luci.model.security"
+security.security_update_tm_signature()

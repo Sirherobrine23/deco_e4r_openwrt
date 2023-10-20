@@ -1,0 +1,30 @@
+#!/bin/sh /etc/rc.common
+
+START=50
+STOP=50
+
+USE_PROCD=1
+PROG_ARPING=/usr/bin/client_mgmt_arping
+PROG=/usr/bin/client_mgmt
+local TM_CLIENT_MGMT_PATH=/tmp/client_mgmt
+
+start_service()
+{
+	if [ ! -d $TM_CLIENT_MGMT_PATH ]; then
+		mkdir $TM_CLIENT_MGMT_PATH
+	fi
+    sysmode=$(uci get sysmode.sysmode.mode)
+    if [ "$sysmode" == "Router" ]; then
+        procd_open_instance
+        procd_set_param command "$PROG_ARPING" -t 10 -o 180 -p 30 -a
+        procd_set_param respawn
+        procd_close_instance
+    fi
+    procd_open_instance
+    procd_set_param command "$PROG"
+    procd_set_param respawn
+    procd_close_instance
+    open_client_triggers &
+
+    /usr/sbin/manager_role_set
+}

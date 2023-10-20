@@ -1,0 +1,31 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2017 Tp-link.com
+# Author: Xu Shengfu <xushengfu@tp-link.com.cn>
+# Date: 27Nov17
+
+START=48
+# Stop before leds
+STOP=48
+
+USE_PROCD=1
+PROG=/usr/sbin/conn-indicator
+
+. /lib/functions.sh
+
+start_service() {
+
+    config_load conn_indicator
+    config_get_bool enabled conn_indicator 'enabled' '1'
+
+    [ "${enabled}" -gt 0 ] || {
+        return 1
+    }
+    config_clear
+
+    procd_open_instance
+    procd_set_param command "$PROG" -l i
+    procd_set_param respawn
+    procd_close_instance
+
+    ubus call leds power "{\"state\":\"on\"}" &
+}

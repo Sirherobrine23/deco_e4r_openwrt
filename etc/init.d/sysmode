@@ -1,0 +1,103 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2016 Shenzhen TP-LINK Technologies Co.Ltd.
+
+START=30
+STOP=90
+
+USE_PROCD=1
+
+SYS_MODE_DB=/tmp/sys_mode
+TMP_FILE=/tmp/.sys_mode
+
+. /lib/functions.sh
+
+# Returns the sys mode (Router, AP)
+sysmode_get_db() {
+    local mode="Router"
+    if [ -f $SYS_MODE_DB ]; then
+        mode="$(cat $SYS_MODE_DB)"
+    fi
+    echo $mode
+}
+
+# Saves the given mode to the database
+sysmode_set_db() {
+    local mode="$1"
+    echo "$mode" > $TMP_FILE
+    mv $TMP_FILE $SYS_MODE_DB
+}
+
+#Delay 0-10s, avoid app received no reply
+sysmode_reboot_delay() {
+    local delay_total="8"
+    local delay_time=
+    let delta_time=$2-$1
+        if test $delta_time -ge 0  
+        then
+            let delay_time=${delay_total}-${delta_time} 
+            if test $delay_time -gt 0
+            then
+                echo "delay ${delay_time} s before reboot">>/dev/console                
+                sleep $delay_time
+            fi
+        fi
+}
+
+start_service(){
+	local sysmode
+
+	config_load sysmode
+	config_get sysmode sysmode mode 'Router'
+
+	sysmode_set_db "$sysmode"
+
+	return 0
+}
+
+service_triggers(){
+	procd_add_reload_trigger "sysmode"
+}
+
+reload_service(){
+	local newmode
+	local oldmode=$(sysmode_get_db)
+    local result=''
+    local status=''
+
+	config_load sysmode
+	config_get newmode sysmode mode 'Router'
+
+#	if [ "$sysmode" = "AP" ];then
+#		ubus send smartip '{"action":4,"status":1}'
+#	elif [ "$sysmode" = "Router" ];then
+#		ubus send smartip '{"action":4,"status":2}'
+#	else
+#		echo "Unsupport sysmode: $sysmode"
+#		return 1
+#	fi
+#
+#   return 0
+
+	if [ $newmode = $oldmode ];then
+		echo "SYSMODE nochanged. Do nothing..." > /dev/console
+	else
+
+        config_load repacd
+        config_get device_type repacd DeviceType 'AP'   
+        if [ "$device_type" = 'RE' ]; then
+            echo "SYSMODE changed. I am RE, Rebooting system right now..." > /dev/console
+            reboot -f
+        fi
+        local start_timestamp=`date +%s`
+        echo "SYSMODE changed. Update config..." > /dev/console
+        result=$(ubus -t 25 call sync force_sync)
+        local end_timestamp=`date +%s` 
+        sysmode_reboot_delay "$start_timestamp" "$end_timestamp"
+
+		echo "update result($result). Rebooting system..." > /dev/console
+		
+        reboot -f
+	fi
+
+	return 0
+}

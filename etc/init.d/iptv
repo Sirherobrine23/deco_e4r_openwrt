@@ -1,0 +1,98 @@
+#!/bin/sh /etc/rc.common
+
+#start before wanDetect
+START=45
+STOP=45
+USE_PROCD=1
+DEBUG_OUTOUT=1
+DEBUG_LEVEL=6
+
+. /lib/iptv/iptv.sh
+
+iptv_echo() {
+    if [ "$DEBUG_OUTOUT" -gt 0 ]; then
+            echo "${1} $2" > /dev/console
+            logger -p $DEBUG_LEVEL "${1} $2"
+    fi
+}
+
+start_service() {
+    iptv_echo iptv.init "start iptv"
+    iptv_echo iptv "start_service " 
+    local device_id=$(getfirm DEV_ID)
+    local role=$(uci get bind_device_list."$device_id".role 2>/dev/null)
+    local old_guest_eth_enable
+    local br=$(brctl show | grep br-iptv)
+    local sysmode
+
+    config_load iptv_v2
+    config_get iptv_enable info enable "0"
+    config_get iptv_vid info iptv_vid "0"
+    config_get iptv_prio info iptv_prio "0"
+    config_get iptv_type info iptv_type "normal"
+    config_clear
+
+    config_load wifi
+    config_get old_guest_eth_enable guest vlan_enable "1"
+    config_clear
+
+    config_load sysmode
+    config_get sysmode sysmode mode 'Router'
+    config_clear
+
+    [ "$sysmode" != "Router" ] && return 0 
+
+    if [ -z "$br" ]; then
+        brctl addbr br-iptv
+        ifconfig br-iptv mtu 1500
+        ifconfig br-iptv up
+	echo 0 > /sys/devices/virtual/net/br-iptv/bridge/multicast_snooping
+    fi
+
+    if [  "$role" = "AP" ]; then
+        if [ "$iptv_enable" == 1 ] || [ "$iptv_type" == "bridge" ]; then
+            #guest_eth clean
+            if [ "$old_guest_eth_enable" = "1" ]; then
+                uci_toggle_state wifi guest vlan_enable "0"
+                uci_toggle_state wifi guest vlan_id "0"
+                /etc/init.d/guest_eth reload "clear" "full"
+            fi
+
+            #iptv set
+            if [ "$iptv_enable" == 1 ]; then
+                setup_iptv "$iptv_vid" "$iptv_prio" "normal"
+            elif [ "$iptv_type" == "bridge" ]; then
+                setup_iptv "0" "0" "$iptv_type"
+            fi
+
+        else
+            #iptv clean
+            clear_iptv "$iptv_type"
+
+                #guest_eth set
+            if [ "$old_guest_eth_enable" = "0" ]; then
+                uci_revert_state wifi guest vlan_enable
+                uci_revert_state wifi guest vlan_id
+                /etc/init.d/guest_eth reload "wifi"
+            fi
+        fi
+    else
+        clear_iptv "$iptv_type"
+        if [ "$old_guest_eth_enable" = "0" ]; then
+            #guest_eth set
+            uci_revert_state wifi guest vlan_enable
+            uci_revert_state wifi guest vlan_id
+            /etc/init.d/guest_eth reload "wifi"
+        fi
+    fi
+    
+}
+
+service_triggers() {
+    procd_add_reload_trigger "iptv_v2"
+}
+
+reload_service() {
+    iptv_echo iptv.init "reload iptv"
+    /etc/init.d/iptv restart
+}

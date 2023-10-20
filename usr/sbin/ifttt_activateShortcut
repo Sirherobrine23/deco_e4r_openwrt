@@ -1,0 +1,34 @@
+#!/usr/bin/lua
+
+local ifttt = require "cloud.tp_apps.ifttt"
+local sys   = require "luci.sys"
+local nixio = require "nixio"
+local dbg   = require "luci.tools.debug"
+local json = require "luci.json"
+local io    = require "io"
+local ctl_auto = require "luci.controller.admin.mobile_app.iot_automation"
+local uci_r = uci.cursor()
+
+local ctl_ifttt = {}
+ctl_ifttt.dispatch = ifttt.dispatch
+local ctl_tbl = {
+    set_shortcut = {
+        ctl = ctl_auto,
+        form = "iotoneclick",
+        oper = "set"
+    }
+}
+
+local req = {}
+req.cur_scene = {}
+req.cur_scene.scene_id = tostring(arg[1])
+local suc, result = ifttt.control_dispatch(ctl_tbl.set_shortcut, req, config_version)
+if false == suc then
+    dbg.print("Fail to execute shortcut")
+else
+    if result.is_success == true then
+        dbg.print("Shortcut executes success")
+    else
+        dbg.print("Shortcut executes error") 
+    end
+end

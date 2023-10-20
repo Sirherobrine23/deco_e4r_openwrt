@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2014 Qualcomm Atheros, Inc.
+#
+# All Rights Reserved.
+# Qualcomm Atheros Confidential and Proprietary.
+
+# . /lib/ipq806x.sh
+. /lib/functions.sh
+
+START=98
+
+SERVICE_WRITE_PID=1
+SERVICE_DAEMONIZE=1
+
+start() {
+
+    thermaltool -i wifi1 -set -e 1 -p0 1 -lo0 -100 -hi0 130 -off0 0 -qp0 7
+    thermaltool -i wifi1 -set -e 1 -p1 1 -lo1 127 -hi1 140 -off1 25 -qp1 7
+    thermaltool -i wifi1 -set -e 1 -p2 1 -lo2 137 -hi2 145 -off2 35 -qp2 7
+    thermaltool -i wifi1 -set -e 1 -p3 1 -lo3 142 -hi3 150 -off3 60 -qp3 7
+
+
+    local enabled
+
+    config_load 'thermal'
+    config_get_bool enabled config 'Enabled' '0'
+
+    [ "$enabled" -gt 0 ] || {
+        return 1
+    }
+
+    service_start /usr/sbin/thermald
+}
+
+stop() {
+    service_stop /usr/sbin/thermald
+}
+
+restart() {
+    stop
+    start
+}

@@ -1,0 +1,1 @@
+!function(s){s.su=s.su||{},s.su.url=function(u){return{toStringURL:function(){return s.su.url.subs+(s.su.url.stok||"")+u}}},s.su.ozkerurl=function(u){return u=s.su.url.ozkersubs+s.su.url.stok+u},s.su.url.ozkersubs="/cgi-bin/ozker/;stok=",s.su.url.subs="/cgi-bin/luci/;stok=",s.su.url.stok=""}(jQuery);

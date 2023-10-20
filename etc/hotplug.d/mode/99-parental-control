@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ "$POINT" == "END" -a "$DSTMODE" == "FAP" ]; then
+	/etc/init.d/parental_control stop &
+	sleep 5
+	/etc/init.d/parental_control start &
+elif [ "$POINT" = "END" -a "$DSTMODE" = "RE" ]; then
+	/etc/init.d/parental_control stop &
+fi

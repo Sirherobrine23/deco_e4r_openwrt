@@ -1,0 +1,14 @@
+#!/bin/sh
+
+ubus call leds device '{"state":"upgrading"}'
+
+/etc/init.d/awn stop
+/etc/init.d/sync-server stop
+/etc/init.d/tmpsvr stop
+/etc/init.d/speedtest stop
+/etc/init.d/tm_shn stop
+/etc/init.d/smartip stop lan
+/etc/init.d/smartip stop guest
+/etc/init.d/client_mgmt stop
+/etc/init.d/apsd stop
+/etc/init.d/wan stop

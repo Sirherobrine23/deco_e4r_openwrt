@@ -1,0 +1,129 @@
+#!/usr/bin/lua
+
+local uci   = require "luci.model.uci"
+local sys   = require "luci.sys"
+local fs    = require "luci.fs"
+local dbg   = require "luci.tools.debug"
+local uci_r = uci.cursor()
+
+-----------------new---------------------------
+
+function _print_tbl(data)
+    if type(data) == "table" then
+        for i, v in pairs(data) do
+            dbg.print(i .. " = " .. tostring(data[i]))
+            if type(data[i]) == "table" then
+                _print_tbl(data[i])
+            end
+        end
+    end
+end
+
+--- comps for dst rules sort
+-- @param dst rules
+-- @return data
+local function comps(a, b)
+    return tonumber(a.startTime) < tonumber(b.startTime)
+end
+
+--- Load config dst rules
+-- @param N/A
+-- @return data the choosen dst rule
+local function load_cloud_dst()
+    local res
+    local ruleList = {}
+
+    -- 1. load from config
+    uci_r:foreach("systime", "dstrule",
+        function(section)
+            local dstrule = uci_r:get_all("systime", section[".name"])
+            local startTime = tonumber(dstrule.startTime)
+            local endTime = tonumber(dstrule.endTime)
+
+            local rule = {}
+            rule.startTime = startTime
+            rule.endTime = endTime
+            rule.dstSavings = dstrule.dstSavings
+            ruleList[#ruleList + 1] = rule
+        end
+    )
+
+    -- 2. check
+    local dstrule_num = #ruleList
+    if dstrule_num > 0 then
+        table.sort(ruleList, comps)
+        res = ruleList[1]
+    end
+
+    return res
+end
+
+
+--- Transfer timestamp to dst string
+-- @param timestamp
+-- @return data return dst string
+local function ts_timestamp_to_dst(timestamp)
+    dbg.print("timestamp " .. timestamp)
+
+    local res = {}
+    res.year = os.date("%Y", timestamp)
+    res.month = tostring(os.date("%m", timestamp) + 0)
+    -- day of week
+    res.day = tostring(os.date("%w", timestamp) + 0)
+
+    local day = tonumber(os.date("%d", timestamp))
+    local dateVal = res.year .. "-" .. res.month .. "-1"
+    local cmd = 'echo -n $(( 1+(' .. day .. '-1-(7+' .. res.day .. '-$(date -d ' .. dateVal .. ' +%w))%7)/7 ))'
+    --dbg.print(cmd)
+    res.week = sys.exec(cmd)
+
+    res.hour = os.date("%H", timestamp) + 0
+    res.minutes = os.date("%H", timestamp) * 60 + os.date("%M", timestamp)
+
+    --_print_tbl(res)
+
+    ---- /etc/TZ M3.4.0/1
+    local sys_hour = os.date("%H:%M", timestamp)
+    local sys_dst = 'M' .. res.month .. '.' .. res.week .. '.' .. res.day .. '/' .. sys_hour
+    dbg.print(sys_dst)
+
+    return res, sys_dst
+end
+
+--- Load cloud dst
+-- @param N/A
+-- @return data
+function ts_load_cloud_dst()
+    -- get current system timezone
+    local sname = uci_r:get_first("time_settings", "system", nil, nil)
+    local timezone = uci_r:get("time_settings", sname, "timezone")
+
+    -- get tz cmd
+    local tz = timezone
+    tz = tz:find("+") and tz:gsub("+", "-") or tz:gsub("-", "+")
+
+    -- set tz without dst to avoid local_time misunderstand
+    fs.writefile("/etc/TZ", tz .. "\n")
+
+
+    local dst = load_cloud_dst()
+
+    -- TODO: dst.dstSavings
+    if dst and dst.dstSavings == "60" then
+        local startTime, dst_start = ts_timestamp_to_dst(dst.startTime)
+        local endTime, dst_end = ts_timestamp_to_dst(dst.endTime)
+
+        -- if dst start time is equal to end time, then return error
+        if dst_start == dst_end then
+            return false, "start time cannot be the same as end time"
+        end
+
+        tz  = tz .. "TMG," .. dst_start .. "," .. dst_end
+    end
+
+    dbg.printf(tz)
+    fs.writefile("/etc/TZ", tz .. "\n")
+    return true
+end
+
+ts_load_cloud_dst()

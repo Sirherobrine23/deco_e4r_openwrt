@@ -1,0 +1,11 @@
+#!/bin/sh
+
+#echo "========== MODE: POINT = $POINT ===========" > /dev/console
+
+[ "$DSTMODE" = "HAP" ] && exit 0
+
+if [ "$POINT" == "END" -o "$POINT" == "CAPCHANGE" ]; then	
+	#ps | grep cloud_awn_update | awk '{cmd="kill -9 "$1;system(cmd)}'
+	killall cloud_awn_update
+	cloud_awn_update &
+fi

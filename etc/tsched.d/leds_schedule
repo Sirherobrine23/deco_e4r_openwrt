@@ -1,0 +1,50 @@
+#!/bin/sh
+# Copyright (c) 2016 Shenzhen TP-LINK Technologies Co.Ltd.
+# Author		Wang Hao<wanghao@tp-link.com.cn>
+
+cmd=$1
+shift
+
+case $cmd in
+    *ACTIVE)
+        #send lock to leds
+        ubus call leds switch '{"state":"off", "check":true}'
+    ;;
+
+    *DORM)
+        #send unlock to leds
+        ubus call leds switch '{"state":"on", "check":true}'
+    ;;
+
+    *TURN_OFF)
+        #send lock to leds
+        rm /tmp/last_led_status 2>/dev/null
+        tsched_conf -D leds_schedule
+        tsched_conf -u leds_schedule
+        ubus call leds switch '{"state":"off"}'
+    ;;
+
+    *TURN_ON)
+        #send unlock to leds
+        local enable
+        enable=$(uci get leds.night_mode.enable)
+        if [[ ! -f "/tmp/last_led_status" ]] || [[ "$enable" = "off" ]]; then
+            ubus call leds switch '{"state":"on"}'
+        fi
+        local enable
+        local time_begin
+        local time_end
+        enable=$(uci get leds.night_mode.enable)
+        time_begin=$(uci get leds.night_mode.time_begin)
+        time_end=$(uci get leds.night_mode.time_end)
+        leds_set_nightmode "$enable" "$time_begin" "$time_end" &	
+    ;;
+
+    *RESET)
+        #send unlock to leds
+        if [[ -f "/tmp/last_led_status" ]]; then
+            ubus call leds switch '{"state":"on", "check":true}'
+        fi
+	;;
+esac
+

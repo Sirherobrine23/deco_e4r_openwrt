@@ -1,0 +1,7 @@
+#!/bin/sh
+
+[ "$SRCMODE" = "FAP" -a "$DSTMODE" = "HAP" ] && exit 0
+
+if [ "$POINT" == "END" -o "$POINT" == "CAPCHANGE" ]; then
+	/etc/init.d/sysntpd restart
+fi

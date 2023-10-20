@@ -1,0 +1,43 @@
+#! /usr/bin/env lua
+--
+-- mix_network_check.lua
+-- Copyright (C) 2018 tpuser <liushuaiwei@liushuaiwei@tp-link.com.cn>
+-- check bind device list, if any different kinds of Deco in our system, 
+-- which will trigger mix_network action, such as opcode forward
+--
+
+local uci   = require "luci.model.uci"
+local nixio = require "nixio"
+local uci_r = uci.cursor()
+
+local MIX_NETWORK_STATUS_FILE = "/tmp/mix_network_status"
+local MIX_NETWORK_STATUS_LOCK = "/var/run/mix_network.lock"
+
+local mixed = false
+local device_model_cache = nil
+
+uci_r:foreach("bind_device_list", "device",
+function(section)               
+    if mixed then
+        return
+    elseif not device_model_cache then
+        device_model_cache = section['device_model']:trim()
+    elseif device_model_cache ~= section['device_model'] then
+        mixed = true
+    end
+end
+)
+
+-- add lock
+local RWLocker = require("luci.model.locker").RWLocker
+local locker = RWLocker(MIX_NETWORK_STATUS_LOCK)
+locker:wlock()
+
+if not nixio.fs.access(MIX_NETWORK_STATUS_FILE) and mixed then
+    local file = io.open(MIX_NETWORK_STATUS_FILE,"w")
+    file:close()
+elseif nixio.fs.access(MIX_NETWORK_STATUS_FILE) and not mixed then
+    os.remove(MIX_NETWORK_STATUS_FILE)
+end
+locker:ulock()
+

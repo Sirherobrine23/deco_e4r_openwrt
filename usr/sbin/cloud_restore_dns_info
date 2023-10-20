@@ -1,0 +1,71 @@
+#!/usr/bin/lua
+
+local uci   = require "luci.model.uci"
+local dbg   = require "luci.tools.debug"
+local uci_r = uci.cursor()
+local sys   = require "luci.sys"
+local cloud_ddns = require "cloud_req.cloud_ddns"
+local ctl_cloud = require "luci.controller.admin.mobile_app.cloud"
+local socket = require "socket"
+
+local function restore_dns_info()
+	local ret
+	
+	dbg.print("== restore_dns_info start ==")
+	
+	local uci_s = uci.cursor_state()
+	local mode = uci_s:get("repacd", "repacd", "DeviceType")
+	if mode == "RE" then
+		dbg.print("=== RE role ===")
+		
+		return true
+	else
+		dbg.print("=== AP role ===")
+		local bind_doamin = uci_r:get("cloud_ddns", "dns_info", "domain")
+		local status = uci_r:get_bool("cloud_ddns", "dns_info", "status")
+		local form = {}
+		local params = {}
+		
+		if bind_doamin == nil or status == nil then
+			dbg.print("== local config has no valid dns info ==")
+			return false
+		end
+		
+		form.form = "ddns"
+		form.operation = "set"
+		form.params = params
+		form.config_version = tostring(math.floor(socket.gettime()*1000))
+		
+		
+		params.domain_name = bind_doamin
+		params.ddns_status = status
+		params.restore = false
+		
+		ret = ctl_cloud.dispatch(form)
+		if ret.error_code ~= 0 then
+			dbg.print("== fail to restore old dns info ==")
+			return false
+		end
+	end
+	
+	dbg.print("== restore_dns_info end ==")
+	return true
+end
+
+local restore_suc = false
+local retry_time = 0
+
+while not restore_suc and (retry_time < 1) do
+	retry_time = retry_time + 1
+	
+	restore_suc = restore_dns_info()
+	if not restore_suc then
+		sys.call("sleep 6")
+	end
+end
+
+if restore_suc then
+	dbg.print("succeed to restore dns info after %d times" % retry_time)
+else
+	dbg.print("fail to restore dns info after %d times" % retry_time)
+end

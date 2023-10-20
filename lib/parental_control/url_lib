@@ -1,0 +1,810 @@
+Version: 4390
+unsupport: gambling,sex_education,
+1,Classmates,www.classmates.com,3
+2,QQ Game,game.qq.com,7
+3,Affaire.com,www.affaire.com,1
+4,SababaDC,sababadc.com,6
+5,Skype,skype.gmw.cn,2
+6,Chatroulette,chatroulette.com,1
+7,Foxy,www.foxy.com,6
+8,Gadu-Gadu,www.gadu-gadu.pl,2
+9,Google Translate,translate.google.com,14
+10,Koramgame,www.koramgame.com,7
+11,Norton,cn.norton.com,4
+12,Twitter,www.twitter.com,3
+13,Ventrilo,www.ventrilo.com,2
+14,Weiyun,www.weiyun.com,6
+15,iTunes,www.apple.com/cn/itunes,5
+16,Divshare,www.divshare.com,6
+17,Happn,www.happn.com,3
+18,Mail.ru,mail.ru,2
+19,PrivateTunnel,www.privatetunnel.com,2
+20,Shareaza Plus,shareazaplus.sourceforge.net,6
+21,Verychat,www.verychat.fr,2
+22,HiNet Mail,www.webmail.hinet.net,2
+23,Pandora,www.pandora.net,5
+24,RunUO-Ultima,www.runuo.net,7
+25,SaferSurf,www.safersurf.com,2
+26,Whisper,whisper.sh,3
+27,Burn Note,burnnote.com,3
+28,Deezer,www.deezer.com,5
+29,Horde,www.horde.org,2
+30,Textme,www.textme.us,2
+31,Blizzard Entertainment,www.blizzard.com,7
+32,Fastmail,www.fastmail.com,2
+33,Nakido,nakido.com,6
+34,Comcast,www.comcast.com,2
+35,CoolMessenger,www.coolmessenger.com,2
+36,StrongVPN,www.strongvpn.com,2
+37,TVer,tver.jp,5
+38,Fuji TV On Demand,www.fujitv.co.jp,5
+39,Laposte,www.laposte.fr,2
+40,NateOn,nateonweb.nate.com,2
+41,ZeroTier,www.zerotier.com,2
+42,Filestube,www.filestube.com,6
+43,Ngrok,www.ngrok.cc,2
+44,WeChat,web.wechat.com,2
+45,Yahoo Mail,mail.yahoo.com,2
+46,Pagekite,pagekite.net,2
+47,Qello,www.qello.com,5
+48,Snapchat,www.snapchat.com,2
+49,Tistory,www.tistory.com,2
+50,Wangxin,wangxin.taobao.com,2
+51,Hot or Not,hotornot.com,3
+52,Orange,www.orange.com,2
+53,TBS Free,www.tbs.com,5
+54,VPN.HT,vpn.ht,2
+55,AOL Web Messenger,www.aol.com,2
+56,Ebookjapan.co.kr,ebookjapan.co.kr,1
+57,Hexun,www.hexun.com,4
+58,Hidemyass,www.hidemyass.com,2
+59,Plurk,images.plurk.com,3
+60,Radmin,www.radmin.cn,2
+61,Rayfile,www.rayfile.com,6
+62,Sophos,www.sophos.com,4
+63,Winny,www.winny.com,6
+64,Yixin,www.yixin.im,2
+65,Ymail,www.ymail.com,2
+66,012mail,goldmail.inter.net.il,2
+67,Elephantdrive,home.elephantdrive.com,6
+68,Thunderkankan,www.kankan.com,5
+69,FC2,fc2.com,3
+70,Hide My IP,www.hide-my-ip.com,2
+71,T-Online,www.t-online.de,2
+72,Jubii Mail,mail.jubii.dk,2
+73,Stay Invisible,www.stayinvisible.com,2
+74,Yahoo Blog,blog.yahoo.com,3
+75,Youtube,youtube.com,5
+76,uTorrent,www.utorrent.com,6
+77,Friendster,www.friendster.com,3
+78,Whalemail,www.whalemail.org,2
+79,56.com,www.56.com,5
+80,Ameba,www.ameba.jp,3
+81,Lavabit,lavabit.com,2
+82,Avast SecureLine,www.avast.com,2
+83,Freakshare,freakshare.com,6
+84,Lovoo,www.lovoo.com,3
+85,Tiscali,www.tiscali.com,2
+86,Uploading,uploading.com,6
+87,Youku.com,youku.com,5
+88,Bitshare,bitshare.com,6
+89,ASKfm,ask.fm,3
+90,Letitbit.net,letitbit.net,6
+91,Orkut,www.orkut.com,3
+92,Channel 5,www.channel5.com,5
+93,Chinagame,www.chinagames.net,7
+94,IIJ MailViewer,mailview.iij.us,2
+95,MySpace,www.myspace.com,3
+96,POPO,popo.163.com,2
+97,Sexisnow,www.sexisnow.it,1
+98,Yum,www.yum.com,4
+99,Filefactory,www.filefactory.com,6
+100,Microsoft Live.com,login.live.com,14
+101,Aol-Answers,aolanswers.com,3
+102,Furk,www.furk.net,6
+103,Meets,meets.com,3
+104,GoldFile,www.goldfiles.org,6
+105,GigaSize,www.gigasize.com,6
+106,RenRen.com,www.renren.com,3
+107,Vudu,www.vudu.com,5
+108,Turbobit,turbobit.net,6
+109,TweetDeck,tweetdeck.com,3
+110,Akamai.net,www.akamai.com,14
+111,Hootsuite,www.hootsuite.com,3
+112,PBS Video,video.pbs.org,5
+113,Freecast,freecast.com,5
+114,Hitfile,hitfile.net,6
+115,Ku6,www.ku6.com,5
+116,Brightcove,www.brightcove.com,5
+117,Zippyshare,www.zippyshare.com,6
+118,CS Game,www.csgame.org,7
+119,Fastviewer,fastviewer.com,2
+120,MIUI,www.miui.com,4
+121,Vedivi,www.vedivi.com,2
+122,iQIYI/PPS,www.iqiyi.com,5
+123,SoundCloud,soundcloud.tumblr.com,6
+124,Spotify,www.spotify.com,5
+125,LastFM,www.last.fm,5
+126,RO Game,game.ro.com,7
+127,SpeedyShare,www.speedyshare.com,6
+128,Netflix,www.netflix.com,5
+129,WinSCP,www.winscp.net,6
+130,Google Play,play.google.com,14
+131,Xing,www.xing.com,3
+132,Beanfun Game,www.beanfun.com.cn,7
+133,Lokalisten,www.lokalisten.de,3
+134,GYAO,www.gyao.co.jp,5
+135,Windows Store,www.microsoftstore.com,14
+136,BARKS,www.barks.jp,5
+137,GoZilla,www.gozilla.com,6
+138,Clip2net,clip2net.com,6
+139,BBonline,www.bbonline.com,7
+140,Baofeng,www.baofeng.com,5
+141,Datei.to,datei.to,6
+142,2Shared,www.2shared.com,6
+143,Adobe,www.adobe.com,4
+144,ClubBox,clubbox.co.kr,6
+145,Headweb,www.headweb.co.uk,5
+146,ICQ Web Messenger,web.icq.com,2
+147,MongoDB,www.mongodb.org,4
+148,Open Mail,www.openmail.com,2
+149,Wlt,wlt.kenfor.com,2
+150,Hangame,www.hangame.co.jp,7
+151,Totodisk,www.totodisk.com,6
+152,Viadeo,www.viadeo.com,3
+153,Grooveshark,groovesharks.org,5
+154,Homygame,www.homygame.com,7
+155,LeapFile,www.leapfile.com,6
+156,Tuenti,www.tuenti.com,3
+157,BigUpload,www.bigupload.com,6
+158,Hyves,www.hyves.nl,3
+159,Microsoft Silverlight,www.microsoft.com/silverlight,5
+160,Sony PlayStation,store.playstation.com,7
+161,6.cn,www.6.cn,5
+162,Garena,www.garena.tw,7
+163,91555,www.91555.com,7
+164,ASUSWebStorage,www.asuswebstorage.com,6
+165,Mercari,www.mercari.com,14
+166,Yahoo-mbga.jp,yahoo-mbga.jp,3
+167,File-Upload.net,file-upload.net,6
+168,GREE,www.gree.com.cn,3
+169,JJ Game,www.jjgames.com,7
+170,Kideos,www.kideos.com,5
+171,File-Works,www.fileworks.com,6
+172,Imgo TV,www.imgo.tv,5
+173,Netlog,zh.netlog.com,3
+174,YHgame,www.yhgame.cn,7
+175,2ch,2chcn.com,3
+176,Joy.cn,www.joy.cn,5
+177,7fgame,www.7fgame.com,7
+178,Mobage,www.mobage.cn,3
+179,PutLocker,putlocker.co,6
+180,Yahoo Shopping,shopping.yahoo.com,14
+181,Yinyuetai,www.yinyuetai.com,5
+182,Vuze,www.vuze.com,6
+183,Wetransfer,www.wetransfer.com,6
+184,GoToMeeting,www.gotomeeting.com,2
+185,InstallAnyWhere,www.installanywhere.com,4
+186,Net2Phone,www.net2phone.com,2
+187,RenRen,www.renren.com,2
+188,Salesforce,www.salesforce.com,4
+189,Vagaa,www.vagaa.name,6
+190,Viaplay,viaplay.se,5
+191,ADNstream,www.adnstream.com,5
+192,LoveTheseCurves,lovethesecurves.com,3
+193,Rakuten Shopping,www.rakuten.co.jp,14
+194,iCloud,www.icloud.com,6
+195,CloudMe,www.cloudme.com,6
+196,Livestream,livestream.com,5
+197,Weibo,weibo.com,3
+198,Google+,www.plus.google.com,3
+199,Kodi,kodi.tv,5
+200,Sugarsync,www.sugarsync.com,6
+201,DriveHQ,www.drivehq.com,6
+202,Yandex.Disk,disk.yandex.com,6
+203,Backblaze,www.backblaze.com,6
+204,Flixwagon,www.flixwagon.com,5
+205,Skout,www.skout.com,3
+206,Instagram,instagram.com,3
+207,SpiderOak,www.spideroak.com,6
+208,1337X,1337x.to,6
+209,Podcast,www.podcasts.com,5
+210,Disconnect.me,disconnect.me,2
+211,Goo Mail,mail.goo.ne.jp,2
+212,Google Books,books.google.com,14
+213,Kaspersky,www.kaspersky.com,4
+214,MariaDB,mariadb.org,4
+215,Omegle,www.omegle.com,2
+216,ShowMyPC,showmypc.com,2
+217,AppStore,www.apple.com/ios/app-store,14
+218,MailBigFile,www.mailbigfile.com,6
+219,Shazam,www.shazam.com,5
+220,Egnyte,www.egnyte.com,6
+221,TuneIn,tunein.com,5
+222,Google Docs,docs.google.com,14
+223,PBS Kids,pbskids.org,5
+224,SmugMug,www.smugmug.com,6
+225,BaiduMusic,music.baidu.com,5
+226,SlideShare.net,www.slideshare.net,6
+227,4Sync,www.4sync.com,6
+228,pairs,www.pairs.tw,3
+229,DoubanFM,music.douban.com,5
+230,IDrive,www.idrive.com,6
+231,IMDb.com,www.imdb.com,5
+232,Mendeley,www.mendeley.com,6
+233,Daum-cloud,www.daum.net,6
+234,Vine,vine.co,3
+235,AirAim,airaim.com,2
+236,IPMSG,www.ipmsg.org.cn,2
+237,Kiwoom,www.kiwoom.com,4
+238,McAfee,www.mcafee.com,4
+239,Nifty,www.nifty.com,2
+240,Pinterest,www.pinterest.com,3
+241,Thunder,www.xunlei.com,6
+242,WATCHEVER,www.watcheverhk.com,5
+243,eBay,www.ebay.com,14
+244,Pornhub,www.pornhub.com,1
+245,SnappyTV,www.snappytv.com,3
+246,TeamBeam,www.teambeam.de,6
+247,LiveJasmin.com,www.livejasmin.com,5
+248,Miliao,www.miliao.com,3
+249,XNXX.com,www.xnxx365.com,5
+250,Minne,minne.com,3
+251,A la mode,www.alamode.com,3
+252,MajorLeagueGaming,tv.majorleaguegaming.com,5
+253,Couples,couples.com,3
+254,Wowtv.co.kr,wowtv.co.kr,5
+255,iLOVETALK,www.lovetalk.de,3
+256,iMBC,www.imbc.com,5
+257,AfreecaTV,www.afreecatv.com,5
+258,DMM.yell,labo.dmm.com,3
+259,Arirang,www.arirang.com,5
+260,TXWY Game,www.txwy.com,7
+261,KCTVjeju,kctvjeju.com,5
+262,Aliww,wangwang.taobao.com,2
+263,T66y,t66y.com,1
+264,LINE,www.linecorp.com,2
+265,Maxdome,www.maxdome.de,5
+266,QQ Mail,mail.qq.com,2
+267,TrendMicro,www.trendmicro.com,4
+268,UPlusBox,www.uplusbox.co.kr,6
+269,Windin,www.windin.com,4
+270,Nanaco,www.nanaco-net.jp,3
+271,Between,between.us,3
+272,MBN,www.mbn.co.kr,5
+273,MYSolivetieba,www.mysolive.tv,5
+274,KBS,www.kbs.co.kr,5
+275,Win Web Crawler,www.winwebcrawler.com,14
+276,HTTrack crawler,www.httrack.com,14
+277,Mwave,www.mwave.com,5
+278,FreeOnes.com,freeones.com,5
+279,Omiai,www.love-omiai.info,3
+280,F-Secure,www.f-secure.com,4
+281,Fring,www.fring.com,2
+282,OpenDoor,www.opendoor.com,2
+283,Roundcubemail,roundcube.net,2
+284,Techinline,www.techinline.com,2
+285,Twitch.tv,twitch.tv,5
+286,LINGO,www.lingoapp.com,3
+287,M1905,www.1905.com,5
+288,ifeng.com,www.ifeng.com,14
+289,Matchbook,www.matchbook.com,3
+290,VEVO,www.vevo.com,5
+291,Rakuten Point,global.rakuten.com,14
+292,Baomihua,www.baomihua.com,5
+293,BlackShot,www.blackshot.com,7
+294,FORA.tv,fora.tv,5
+295,Friendchat,www.friendschat.org,3
+296,Pruna,www.pruna.es,6
+297,Fril,fril.jp,14
+298,Shin-Etsu,www.shinetsu.co.jp,3
+299,Soribada,www.soribada.com,6
+300,Vimeo,vimeo.com,5
+301,Gample,www.diyhard.co.kr,6
+302,Anais-apparel,www.anais-apparel.at,1
+303,BitTorrent Series,www.bittorrent.com,6
+304,DZH,www.dzh.com.cn,4
+305,GetRight,getright.com,6
+306,MySQL,www.mysql.com,4
+307,Our Game,www.ourgame.com,7
+308,IPVanish,www.ipvanish.com,2
+309,VNN,www.vnn.cn,2
+310,Yahoo Messenger,messenger.yahoo.com,2
+311,ISL Online,www.islonline.com,2
+312,NOD32,www.eset.com,4
+313,Qnext,www.qnext.com,6
+314,Sina Web Game,game.weibo.com,7
+315,TED,www.ted.com,5
+316,Tmall,www.tmall.com,14
+317,Zenno,zenno.com,2
+318,Pigg Party,lp.pigg-party.com,3
+319,Tube8,www.tube8tube8.com,5
+320,Yahoo Finance,www.finance.yahoo.com,14
+321,Mgoon,www.mgoon.com,5
+322,ShareBox,www.sharebox.co.za,6
+323,Yahoo! Partner,partner.yahoo.co.jp,3
+324,Bondisk,www.bondisk.com,6
+325,Trailers,trailers.apple.com,5
+326,FUNMILY Game,www.funmily.com,7
+327,HBOGO,www.hbogo.com,5
+328,KDISK,www.kdisk.co.kr,6
+329,MokoMoko,www.mokomoko.id,3
+330,Kaltura.com,kaltura.com,5
+331,PuriTalk,puritalk.net,3
+332,Rakuten Edy,edy.rakuten.co.jp,14
+333,ChatPlaza,www.chatplaza.com,3
+334,FILEJO,filejo.com,6
+335,Plex.tv,www.plex.tv,5
+336,DouyuTV,www.douyu.com,5
+337,FILEDOK,www.filedok.com,6
+338,WakuWaku,www.wakuwakujapan.com,3
+339,Adobe.com,www.adobe.com,14
+340,Webhard,www.webhard.co.kr,6
+341,Avast,www.avast.com,4
+342,Coralcdn,www.coralcdn.org,2
+343,MyFreeCams,myfreecams.com,1
+344,OneDrive,www.office.com,6
+345,PayPal.com,www.PayPal.com,14
+346,RTP,www.rtp.pt,5
+347,StockTrace,www.stocktrace.co.uk,4
+348,easyMule,www.easymule.com,6
+349,TPLE,www.tple.co.kr,6
+350,Weico,www.weico.com,3
+351,DiskPump,www.hugedomains.com,6
+352,NETFOLDER,www.netfolder.com,6
+353,VideoPass,www.videopass.jp,5
+354,DiDiTaxi,www.diditaxi.com.cn,14
+355,Kids.gov,kids.gov,5
+356,Aeria Games,www.aeriagames.com,7
+357,DBGO,www.dbgo.cn,6
+358,Kamacho,www.kmachos.com,3
+359,AbemaTV,abema.tv,5
+360,PSO2,pso2.jp,7
+361,Jyukutomo,jyukutomo.club,3
+362,Yesfile,www.yesfile.com,6
+363,Ashley Madison,www.ashleyrnadison.com,1
+364,Ask.com,www.ask.com,14
+365,Biglobe,www.biglobe.ne.jp,2
+366,Glype,www.glype.com,2
+367,JRJ,www.jrj.com.cn,4
+368,Jiangmin,www.jiangmin.com,4
+369,PaltalkScene,www.paltalk.com,2
+370,SBS,www.sbs.co.kr,5
+371,Viber,www.viber.com,2
+372,YunFile,yunfile.com,6
+373,HAPPYMAIL,www.happymail.co.jp,3
+374,Miitomo,miitomo.com,3
+375,National Geographic,www.nationalgeographic.com,14
+376,LINE BLOG,www.lineblog.me,3
+377,Odisk,www.odisk.co.kr,6
+378,Ubisoft,www.ubisoft.com.cn,7
+379,Kiwi,www.kiwi.com,3
+380,Periscope,www.periscope.tv,5
+381,Adrive.co.kr,Adrive.co.kr,6
+382,tumblr,www.tumblr.com,3
+383,WSOP,www.wsop.com,7
+384,TexasHoldemPoker,www.texasholdempokeronline.com,7
+385,DarkSummoner,www.darksummoner.com,7
+386,SUPERDOWN,www.superdown.com.br,6
+387,AirlineMogul,www.airlinemogul.com,7
+388,Downs,www.downs-fr.com,6
+389,HBO NOW,www.hbonow.com,5
+390,Avira,www.avira.com,4
+391,BBC,www.bbc.com,14
+392,Fileguri,www.fileguri.com,6
+393,Filehosting,www.filehosting.org,6
+394,Ispeakgame,www.ispeak.cn,7
+395,Kakao,www.kakaocorp.com,2
+396,SquirrelMail,www.squirrelmail.org,2
+397,UUSee,www.uusee.com,5
+398,UcTalk,utg.sina.com.cn,2
+399,Evony,www.evony.com,7
+400,BasketBallZone,www.bballzone.net,7
+401,Radiko.jp,radiko.jp,5
+402,Wikipedia,www.wikipedia.org,14
+403,Y8 Game,www.y8.com,7
+404,Tdisk,m.tdisk.co.kr,6
+405,TwitCasting,www.twitcasting.tv,5
+406,Y8-Y8,www.y8-y8.com,7
+407,Amazon,www.amazon.com,14
+408,KIZI-GAMES,www.kizi.com,7
+409,V LIVE,www.vlive.tv,5
+410,Ibibo,www.ibibo.com,7
+411,Jjangfile,www.jjangfile.net,6
+412,Panda,www.panda.tv,5
+413,Hattrick Game,www.hattrick.org,7
+414,Godgame,www.godgame.com.tw,7
+415,Pdpop,www.pdpop.com,6
+416,Alibaba.com,www.alibaba.com,14
+417,Bloomberg,www.bloomberg.com,4
+418,Dev-Host,www.devhost.com,6
+419,Emsisoft,www.emsisoft.com,4
+420,Kproxy,www.kproxy.com,2
+421,SopCast,www.sopcast.com,5
+422,Torchlight2,www.torchlight2game.com,7
+423,Zoho Mail,www.zoho.com.cn/mail,2
+424,iCall,www.i-call.cn,2
+425,LinkedIn Pulse,www.linkedin.com,14
+426,BookU,www.bookuu.com,14
+427,Expedia,www.expedia.com,14
+428,Baidu,www.baidu.com,14
+429,Origin,www.origin.co,7
+430,LoL,lol.qq.com,7
+431,Yahoo,www.yahoo.com,14
+432,THISISGAME,www.thisisgame.com,7
+433,Taobao,www.taobao.com,14
+434,JustBeamIt,www.justbeamit.com,6
+435,Miniclip Game,www.miniclip.com,7
+436,888games,www.888games.com/games,7
+437,Sina.com,sina.com,14
+438,CNN.com,www.cnn.com,14
+439,Inter7,www.inter7.com,2
+440,Megaproxy,mega-proxy.com,2
+441,Netdania,www.netdania.com,4
+442,Panda,m.panda.tv,4
+443,Solidfiles,www.solidfiles.com,6
+444,TaoBao AliWW,wangxin.taobao.com,2
+445,Betfair Game,games.betfair.com,7
+446,Kongregate Game,www.kongregate.com,7
+447,Roblox Game,www.roblox.com,7
+448,King Game,king.com,7
+449,AVG,www.avg.com,4
+450,FreeSafeIP,www.freesafeip.com,2
+451,IBackup,www.ibackup.com,6
+452,Nimbuzz,nimbuzz.com,2
+453,Sina Video,video.sina.com.cn,5
+454,TradeInterceptor,www.tradeinterceptor.com,4
+455,TrendMicro WRS,www.cnn.com,14
+456,FileSwap,www.file-swap.com,6
+457,Metacafe,www.metacafe.com,5
+458,Smoug,smoug.net,2
+459,Sogou.com,www.sogou.com,14
+460,Soulseek,www.slsknet.org,6
+461,1und1,www.1und1.de,2
+462,Evernote,www.yinxiang.com,14
+463,Pidgin,www.pidgin.im,2
+464,Wuaki.tv,wuaki.tv,5
+465,indoona,www.indoona.com,2
+466,GNUnet,gnunet.org,6
+467,Gadu-Gadu Web Messenger,www.gadu-gadu.pl,2
+468,ISPQ,www.ispq.com,2
+469,Plala,www.plala.or.jp,2
+470,SHOUTcast,www.shoutcast.com,5
+471,Temp-Share,temp-share.com,6
+472,iQON - Fashion Coordinate iQON,www.iqon.jp,14
+473,Otamart,otamart.com,14
+474,Rakuma,rakuma.rakuten.co.jp,14
+475,Creema,www.creema.jp,14
+476,Honeys,www.honeys.com.cn,14
+477,Kagu350,www.kagu350.com,14
+478,Right-On,right-on.co.jp,14
+479,10JQKA,www.10jqka.com.cn,4
+480,AIM/ICQ/iIM,www.aim.com,2
+481,Cga.com,www1.cga.com,7
+482,Facebook,www.facebook.com,3
+483,FlashGet,www.flashget.com,6
+484,Oracle,www.oracle.com,4
+485,TeamViewer,www.teamviewer.com,2
+486,Winamp,www.winamp.com,5
+487,eBuddy.com,www.ebuddy.com,2
+488,Alipay.com,ww.alipay.com,14
+489,BBC-iplayer,www.bbc.co.uk/iplayer,5
+490,Karoo Lark,www.karoolark.com,2
+491,Momo,www.immomo.com,2
+492,WAKWAK,www.wakwak.com,2
+493,WikiUpload,wikiupload.wikispaces.com,6
+494,XNap,xnap.sourceforge.net,6
+495,Myibidder Auction Bid Sniper for eBay,www.myibidder.com,14
+496,Adjust.com,adjust.com,14
+497,Duba,www.duba.com,4
+498,Eyejot,www.eyejot.com,2
+499,Imgur,imgur.com,14
+500,Live365,www.live365.com,5
+501,Ooma,www.ooma.com,2
+502,PartyPoker,www.partypoker.com,7
+503,Kakaku.com,kakaku.com,14
+504,Livedoor,www.livedoor.com,14
+505,Qiita,qiita.com,14
+506,DMM.com,www.dmm.com,14
+507,BUYMA.com,www.buyma.com,14
+508,LINE NEWS,news.line.me,14
+509,Shadowverse,shadowverse.jp,7
+510,Tabelog,tabelog.com,14
+511,Adcash,www.adcash.com,14
+512,Apple,www.apple.com,4
+513,BypassThat,www.bypassthat.com,2
+514,Dailymotion,dailymotion.com,5
+515,MEGA,www.mega.com,6
+516,Pogo,www.pogo.com,7
+517,Web IM+,www.plus.im,2
+518,Yodobashi,www.yodobashi.com,14
+519,Amazon Alexa,developer.amazon.com/zh/alexa,14
+520,Tokyu Hands,www.tokyu-hands.co.jp,14
+521,Amazon Prime Now,primenow.amazon.com,14
+522,Aikq,www.aikq.de,2
+523,Aria2,aria2.github.io,6
+524,Filmin,www.filmin.es,5
+525,Huffington Post,www.huffingtonpost.com,14
+526,KC,www.keepc.com,2
+527,PokerStars,www.pokerstars.com,7
+528,Ticket Camp,ticketcamp.net,14
+529,Blayze Games,blayzegames.com,7
+530,MUJI passport,www.muji.com,14
+531,360buy,www.JD.com,14
+532,4Shared,4Shared,6
+533,Flixster,www.flixster.com,5
+534,IMVU,www.imvu.com,2
+535,Yandex.Mail,mail.yandex.com,2
+536,Battlefield,www.battlefield.com,7
+537,Arcor,www.arcor.com,2
+538,ESPN,espn.go.com,14
+539,Hulu,www.hulu.com,5
+540,Bluewin,www.bluewin.ch,2
+541,Depositfiles,depositfiles.com,6
+542,GuaGua,www.guagua.cn,5
+543,PiIM,www.piim.org,2
+544,Nintendo,www.nintendo.com,7
+545,Clash Royale,clashroyale.com,7
+546,AnyDesk,www.anydesk.com,2
+547,Directbox,www.directbox.com,2
+548,Gameloft,www.gameloft.com,7
+549,360 Cloud,www.360cloud.org,6
+550,FSJOY,www.fsjoy.com,7
+551,FlyProxy,flyproxy.com,2
+552,Freenet,www.freenet.de,2
+553,Google Analytics,analytics.google.com,14
+554,Kugou,www.kugou.com,5
+555,Pando,pando.com,6
+556,Raidcall,www.raidcall.com.tw,2
+557,Reverse Othellonia,www.othellonia.com,7
+558,175pt,www.175pt.com,7
+559,Slack,www.slack.com,2
+560,Starly Girls,www.starlygirls.jp,7
+561,BitDefender,www.bitdefender.com,4
+562,FIFA,www.fifa.com,7
+563,Flickr,www.flickr.com,3
+564,QQ/TM,www.qq.com,2
+565,SoftEther/PacketiX,www.softether.cn,2
+566,Baidu Cloud,pan.baidu.com,6
+567,Smart Mail,www.smartmail.com.au,2
+568,Grand Summoners,grandsummoners.com,7
+569,Rewrite IgnisMemoria,rewriteim.jp,7
+570,Deepnet Explorer,www.deepnetexplorer.com,6
+571,GameTea/GameABC,www.gametea.com,7
+572,WhatsApp,www.whatsapp.com,2
+573,Fishing Star,www.star-fishing.com,7
+574,6waves,www.6waves.com,7
+575,Hortensia Sagal,www.horsaga.com.tw,7
+576,Apple Music,www.apple.com/cn/music,5
+577,FileDropper,www.filedropper.com,6
+578,WEB.DE,web.de,2
+579,aMule,amule.org,6
+580,24im,www.24im.com,2
+581,Ammyy,www.ammyy.com,2
+582,CrashPlan,www.crashplan.com,6
+583,EasyHideIP,www.easy-hide-ip.com,2
+584,Miro,www.getmiro.com,5
+585,Ares,www.ares.com.tw,6
+586,Camfrog,www.chinacamfrog.com,2
+587,Net2FTP,www.net2ftp.com,6
+588,Smithsonian Channel,www.smithsonianmag.com,5
+589,Mediafire,www.mediafire.com,6
+590,NHL,www.nhl.com,5
+591,Snow,www.snow-forecast.com,2
+592,CPROXY,www.cproxy.com,2
+593,Digsby,www.digsby.com,2
+594,NicoNico,www.nicovideo.jp,5
+595,AnonyMouse,anonymouse.org,2
+596,Carbonite,www.carbonite.com,6
+597,GoToAssist,www.gotoassist.com,2
+598,Ooyala,www.ooyala.com,5
+599,Xunyou,www.xunyou.com,7
+600,BitComet,www.bitcomet.com,6
+601,MSP Anywhere,www.mspanywhere.com,2
+602,Mozy,mozy.com,6
+603,Photobucket,www.photobucket.com,5
+604,Avoidr,www.avoidr.com,2
+605,BitTornado,www.bittornado.com,6
+606,MLSsoccer,www.mlssoccer.com,5
+607,360Safe,www.360.cn,4
+608,DingTalk/Laiwang,www.dingtalk.com,2
+609,Hushmail,www.hushmail.com,2
+610,Juiker,www.juiker.tw,2
+611,Qianlong,www.qianlong.com,4
+612,SAP,www.sap.com,4
+613,Weather Channel,www.weather.com,5
+614,Channel 4,www.channel4.com,5
+615,Hidedoor,www.hidedoor.com,2
+616,ApexDC++,www.apexdc.net,6
+617,DNF Game,dnf.qq.com,7
+618,VideoDetective,www.videodetective.com,5
+619,Ustream.tv,ustream.tv,5
+620,Webmail.de,webmail.de,2
+621,Veetle,www.onlinetv.net,5
+622,BitLord,www.bitlord.com,6
+623,Fetion,feixin.10086.cn,2
+624,BitSpirit,www.bitspirit.cc,6
+625,Heyyo,www.heyyo.com.hk,2
+626,iTunes Festival,www.itunesfestival.com,5
+627,Alicall,www.alicall.com,2
+628,CCProxy,www.ccproxy.com,2
+629,SiriusXM,www.siriusxm.com,5
+630,Break.com,break.com,5
+631,Proxy Rental,proxyrental.net,2
+632,Qeshow,www.qeshow.com,2
+633,ChatMe,webchat.chatme.im,3
+634,CinemaNow,www.cinema.com,5
+635,PD-Proxy,www.pdproxy.com,2
+636,Letv,www.le.com,5
+637,Proxy4Free,proxy4free.com,2
+638,Compass.cn,www.compass.cn,4
+639,FileZilla,www.filezilla.cn,6
+640,NTRglobal,www.ntrglobal.com,2
+641,PPTV (PPLive),www.pptv.com,5
+642,Rising,www.rising.com.cn,4
+643,BaiduHi,im.baidu.com,2
+644,Funshion,www.fun.tv,5
+645,Hideman,www.hideman.net,2
+646,NETEASE Mail,mail.netease.com,2
+647,TELTEL,my.teltel.com,2
+648,XBOX,www.xbox.com,7
+649,eMule,www.emule.com,6
+650,BrettspielWelt,www.brettspielwelt.de,7
+651,Gmx Mail,www.gmx.com,2
+652,MTV.com,www.mtv.com,5
+653,9158,www.9158.com,2
+654,LogMeIn,www.logmein.com,2
+655,Sohu TV,tv.sohu.com,5
+656,WD My Cloud,www.mycloud.com,6
+657,eMule Plus,www.emuleplus.com,6
+658,MP4,www.mp4pa.com,5
+659,Livedoor,www.livedoor.com,2
+660,FLV,www.flvcd.com,5
+661,GogoNET,www.gogonetlive.com,2
+662,Nate Mail,www.nate.com,2
+663,Streetlife,www.streetlife.nl,3
+664,Battle.net,battle.net,7
+665,Box,www.box.com,6
+666,FileScope,www.filescope.com,6
+667,Netcall,www.netcall.com,2
+668,PIPI,www.pipi.cn,5
+669,ECP,ecp.bl.com,2
+670,Hola,hola.org,2
+671,Hulkshare,www.hulkshare.com,5
+672,Ketchapp,www.ketchappstudio.com,7
+673,Optimum,www.optimum.net,2
+674,AddictingGames.com,www.addictinggames.com,7
+675,FastTrack,www.bayareafastrak.org,6
+676,Hi5,www.hi5.com,3
+677,Huaan,www.huaan.com.cn,4
+678,Kuaipan,www.kuaipan.cn,6
+679,QQLive,v.qq.com,5
+680,Speedtest.net,www.speedtest.net,14
+681,TortoiseSVN,tortoisesvn.ne,4
+682,Yoics,www.yoics.com,2
+683,au one net,www.auone-net.jp,2
+684,imo.im,imo.im,2
+685,ooVoo,www.oovoo.com,2
+686,Scribd,www.scribd.com,6
+687,Tudou,www.tudou.com,5
+688,Ifeng Video,ifeng.com,5
+689,Proxify,proxify.com,2
+690,Rapidshare,www.rapidshare.com.cn,6
+691,Cradio,www.cradio.cn,5
+692,Fast Proxy,fastproxyservers.org,2
+693,GoGoBox,www.gogobox.com.tw,6
+694,Sendspace,www.sendspace.com,6
+695,Sina Mail,mail.sina.com.cn,2
+696,Zalmos,www.zalmos.com,2
+697,Amazon Prime Music,www.amazon.com,5
+698,Hightail,www.hightail.com,6
+699,Rambler,www.rambler.ru,2
+700,RuneScape,www.runescape.com,7
+701,Crackle,www.crackle.com,5
+702,Diino,www.diino.com,6
+703,FUNMILY,www.funmily.com,7
+704,Hydranode,hydranode.com,6
+705,Blip.tv,blip.tv,5
+706,ProvideSupport,www.providesupport.cn,2
+707,Fluxiom,www.fluxiom.com,6
+708,Audible,www.audible.com,5
+709,Chikka,www.chikka.com,2
+710,DBank,www.dbank.com,6
+711,LOVEFiLM,www.lovefilm.com,5
+712,LinkedIn,www.linkedin.com,3
+713,LiveCare,www.livingcare.com,2
+714,StockStar,www.stockstar.com,4
+715,Virtru,www.virtru.com,2
+716,Daum Mail,mail.daum.ne,2
+717,GM99 Game,www.gm99.com,7
+718,Tinder,tinder.com,3
+719,Web Streaming,www.webstream.co.uk,5
+720,Weibo IM,weibo.com,2
+721,Air-Proxy,www.airproxy.ee,2
+722,Kazaa Lite Tools K++,www.klitetools.com,6
+723,Mail.com,www.mail.com,2
+724,Nomadesk,www.nomadesk.com,6
+725,WO,www.wo.com.cn,2
+726,OCN,www.ocn.ne.jp,2
+727,Rockstar Games,www.rockstargames.com,7
+728,MailChimp,mailchimp.com,2
+729,Apple.com,www.apple.com,14
+730,Crunchyroll,www.crunchyroll.com,5
+731,Dropbox,www.dropbox.com,6
+732,TadaTalk,www.tapatalk.com,3
+733,CMWEBGAME,www.cmwebgame.com,7
+734,Palringo,www.palringo.com,2
+735,Firestorage,firestorage.com,6
+736,Google Earth,earth.google.com,14
+737,KikMessenger,www.kik.com,2
+738,MooPolice,www.moopolice.de,6
+739,Doshow,www.doshow.cn,2
+740,EskimoTube,www.eskimotube.com,5
+741,K12History,www.k12.com,2
+742,Naver Ndrive,www.naver.com,6
+743,Mibbit,www.mibbit.com,2
+744,NewBigTube,newbigtube.com,5
+745,OK Cupid,www.okcupid.com,3
+746,SurfEasy,www.softpedia.com,2
+747,Crocko,crocko.com,6
+748,Frozenway,www.frozenway.com,2
+749,Madbitties,madbitties.com,5
+750,YY,www.yy.com,2
+751,115.com,115.com,6
+752,GoToMyPC,www.gotomypc.com,2
+753,ITV,www.itv.com,5
+754,Livejournal,www.livejournal.com,3
+755,Microsoft Windows Update,www.update.microsoft.com,4
+756,TDX,www.tdx.com.cn,4
+757,TeamSpeak,www.teamspeak.com,2
+758,WinMX,www.winmxworld.com,6
+759,Coffee Meets Bagel,coffeemeetsbagel.com,3
+760,CyberGhostVPN,www.cyberghostvpn.com,2
+761,Ispeak,www.ispeak.cn,2
+762,Korea Mail,mail.korea.kr,2
+763,HowAboutWe,www.howaboutwe.com,3
+764,Hustlertube,www.hustlertube.com,5
+765,SecurityKISS,www.securitykiss.com,2
+766,VzoChat,www.vzochat.com,2
+767,Fileserve,www.fileserve.com,6
+768,Hinge,hinge.co,3
+769,MyEmail,myemail.com,2
+770,Trillian,www.trillian.im,2
+771,WebWarper,www.webwarper.net,2
+772,Bumble,bumble.com,3
+773,Guardster,www.guardster.com,2
+774,HipChat,www.hipchat.com,2
+775,JumboMail,www.jumbomail.me,2
+776,Xtube,www.xtube.nom,5
+777,IntraMessenager,www.intramessenger.net,2
+778,Megashares,megashare.com,6
+779,Phex,www.phex.org,6
+780,ProxFree,www.proxfree.com,2
+781,Yobt.tv,yobt.tv,5
+782,BitWise,www.bitwise.nl,2
+783,Gmail,mail.google.com,2
+784,Supe,www.supe.com,3
+785,TransferBigFiles,www.transferbigfiles.com,6
+786,TunnelBear,www.tunnelbear.com,2
+787,AOL Mail,www.aol.com,2
+788,AstrillVPN,www.astrill.com,2
+789,Barablu,barablu.com,2
+790,Match.com,match.com,3
+791,v.163.com,v.163.com,5
+792,Filemail,www.filemail.com,6
+793,Grindr,www.grindr.com,3
+794,Hide ALL IP,www.hideallip.com,2
+795,Whoshere,www.whoshere.net,2
+796,Yahoo Video,video.yahoo.com,5
+797,hiBox,www.hibox.tv,2
+798,COX,www.cox.com,2
+799,PlentyOfFish,www.pof.com,3
+800,Rufus,rufus.akeo.ie,6
+801,Sdo.com,sdo.com,7
+802,Zamzar,www.zamzar.com,6
+803,ZfreeZ,zfreez.com,2
+804,AniTube,www.anitube.se,5
+805,Appme,www.app.me,2
+806,Douban,www.douban.com,3
+
+

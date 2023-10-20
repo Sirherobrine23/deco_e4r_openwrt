@@ -1,0 +1,130 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2014 The Linux Foundation. All rights reserved.
+# Copyright (C) 2010-2014 OpenWrt.org
+
+START=99
+STOP=10
+
+USE_PROCD=1
+
+CONF_FILE="/etc/improxy.conf"
+
+get_reserve_ip() {
+	getfirm MAC | awk -F '-' -e '{a="0x"$5; b="0x"$6; a=(a%254)+1; b=(b%254)+1;\
+		printf "169.254.%d.%d",a,b}'
+}
+
+fix_missing_ip() {
+	local act="$1"
+	local ifname wan_type proto
+
+	config_load network
+	config_get ifname wan ifname
+	config_get wan_type wan wan_type
+	config_get proto wan proto
+	if [ "$act" = "start" -a "$wan_type" = "pppoe" -a "$proto" = "none"  ]; then
+		ip addr add "$(get_reserve_ip)"/32 dev "$ifname"
+	else
+		ip addr del "$(get_reserve_ip)"/32 dev "$ifname"
+	fi
+}
+
+improxy_pinstance() {
+	local upstream downstream
+
+	#default WAN
+	config_load network
+	config_get upstream wan device
+	[ -n "$upstream" ] || config_get upstream wan ifname
+	echo -e "upstream \t$upstream" >>$CONF_FILE
+
+	#default LAN
+	config_load network
+	config_get downstream lan ifname
+	echo -e "downstream \t$downstream" >>$CONF_FILE
+}
+
+igmp_add_fw_rules() {
+	local r1 r2 r3 r4
+	
+	r1=$(fw list 4 f zone_wan|grep "\-p igmp")
+	[ -z "$r1" ] && fw add 4 f zone_wan ACCEPT ^ { -p igmp }
+	
+	r2=$(fw list 4 f zone_wan|grep "\-d 224.0.0.0/4")
+	[ -z "$r2" ] && fw add 4 f zone_wan ACCEPT ^ { -p udp -d 224.0.0.0/4 }
+	
+	r3=$(fw list 4 f zone_wan_forward|grep "\-d 224.0.0.0/4")
+	[ -z "$r3" ] && fw add 4 f zone_wan_forward zone_lan_ACCEPT ^ { -p udp -d 224.0.0.0/4 }
+	
+	r4=$(fw list 6 f zone_wan_forward|grep -i "\-d FF00::/8")
+	[ -z "$r4" ] && fw add 6 f zone_wan_forward zone_lan_ACCEPT ^ { -p udp -d FF00::/8 }
+}
+
+igmp_del_fw_rules() {
+	fw del 4 f zone_wan ACCEPT { -p igmp }
+	fw del 4 f zone_wan ACCEPT { -p udp -d 224.0.0.0/4 }
+	fw del 4 f zone_wan_forward zone_lan_ACCEPT { -p udp -d 224.0.0.0/4 }
+	fw del 6 f zone_wan_forward zone_lan_ACCEPT { -p udp -d FF00::/8 }
+}
+
+igmp_set_join_version(){
+	config_load iptv
+	config_get join_version "iptv" join_version "2"
+
+    [ "$join_version" = "3" ] && echo -e "join_v3 \tenable" >>$CONF_FILE
+}
+
+start_service() {
+#	local status
+#	config_load network
+	local igmp_enable 
+	local igmp_version
+	config_load iptv
+	
+#	config_get status "lan" igmp_snooping
+	config_get igmp_enable "iptv" igmp_enable 
+#	if [ "$status" = "1" -a "$iptv_on" = "on" ]; then
+	if [ "$igmp_enable" = "on" ]; then
+		#config_get igmp_version "iptv" igmp_version "2"
+		igmp_version="3"
+		echo $igmp_version > /proc/sys/net/ipv4/conf/all/force_igmp_version
+		echo 60 > /proc/sys/net/ipv4/igmp_max_memberships
+		
+		igmp_add_fw_rules			
+		echo -e "igmp \tenable \tversion \t$igmp_version" >$CONF_FILE
+		echo -e "mld \tenable" >>$CONF_FILE
+		
+		improxy_pinstance
+        igmp_set_join_version
+
+		fix_missing_ip start
+
+		procd_open_instance
+		procd_set_param command /usr/sbin/improxy -c $CONF_FILE -p "/tmp/improxy.pid"
+		procd_set_param respawn
+		procd_close_instance
+	else
+		igmp_del_fw_rules
+		echo 2 > /proc/sys/net/ipv4/conf/all/force_igmp_version
+	fi
+	
+	return 0
+}
+
+stop_service() {
+	fix_missing_ip stop
+	return 0
+}
+
+reload_improxy() {
+    stop 
+    start 
+}
+
+reload_service() {
+    reload_improxy &
+}
+
+service_triggers() {
+	procd_add_reload_trigger "iptv"
+}

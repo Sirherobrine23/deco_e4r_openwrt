@@ -1,0 +1,18 @@
+#!/usr/bin/lua
+
+local sync = require "luci.model.sync"
+
+local cmd = arg[1]
+if cmd == "n" or cmd == "new" then
+    local g = sync.create_group()
+    sync.join_group(g.gid, g.key, "AP")
+elseif cmd == "j" or cmd == "join" then
+    sync.join_group(arg[2], arg[3], "RE")
+elseif cmd == "l" or cmd == "leave" then
+    sync.leave_group()
+else
+    print("Usage:")
+    print(arg[0] .. " [n|new]", "Create and join a new group")
+    print(arg[0] .. " [l|leave]", "Leave current group")
+    print(arg[0] .. " [j|join] GROUP_ID GROUP_KEY", "Join an existing group")
+end

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+while true
+do
+    if [ "$(ps | grep "/usr/sbin/Qcmbr" | grep -v grep)" == "" ]; then
+        [ ! -f /tmp/qcmbr_starting ] && {
+            echo "===========run qcmbr==========" > /dev/console
+            touch /tmp/qcmbr_starting
+            /etc/init.d/qcmbr restart
+        }
+    fi
+    sleep 5
+done

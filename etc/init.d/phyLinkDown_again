@@ -1,0 +1,19 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2016 Shenzhen TP-LINK Technologies Co.Ltd.
+# Author		Wang Hao<wanghao@tp-link.com.cn>
+
+START=26
+STOP=26
+
+start() {
+	ssdk_sh debug phy set 3 0 0x840 2>&1 1>/dev/null
+	ssdk_sh debug phy set 4 0 0x840 2>&1 1>/dev/null
+	echo "to down eth0/1 after netfid" > /dev/console
+
+	return 0
+}
+
+stop() {
+	
+	return 0
+}

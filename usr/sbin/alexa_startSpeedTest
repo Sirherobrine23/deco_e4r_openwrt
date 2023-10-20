@@ -1,0 +1,15 @@
+#!/usr/bin/lua
+
+local alexa = require "cloud.tp_apps.alexa"
+
+local ctl_device =  require "luci.controller.admin.mobile_app.device"
+
+local ctl_tbl = {
+	start_speed_test = {
+        ctl = ctl_device,
+        form = "speedtest",
+        oper = "write"
+    },
+}
+
+alexa.control_dispatch(ctl_tbl.start_speed_test, nil, nil)

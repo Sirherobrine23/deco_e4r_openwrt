@@ -1,0 +1,181 @@
+#!/bin/sh /etc/rc.common
+
+START=52
+STOP=90
+
+USE_PROCD=1
+
+start_service() {
+	reload_service
+}
+
+service_triggers() {
+    procd_add_reload_trigger "blacklist"
+}
+
+reload_service() {
+	config_load blacklist
+	maclist_sec=""
+	config_foreach getmaclist_sec client
+
+	# add by DengZhong AP mode(ebtables) Router Mode(iptables)
+	local apmode="$(uci get sysmode.sysmode.mode)"
+	if [ "$apmode" == "AP" ]; then
+		if [ -n "$maclist_sec" ]; then
+			insmodebtablesmodules &
+			sleep 2
+			setblacklistebtables
+		else
+			unloadblacklistebtables
+			rmmodebtablesmodules
+		fi
+	else
+		unloadblacklistebtables
+		rmmodebtablesmodules
+		#add by wanghao
+		setblacklistiptables
+		#add end
+	fi
+	
+	config_load wireless
+	config_foreach setblacklistperband wifi-device 
+	updateneighlist
+}
+
+getmaclist_sec() {
+	local section="$1"
+	config_get mac "$section" mac
+	mac=${mac//-/:}
+	append maclist_sec "$mac "
+}
+
+setblacklistperband() {
+	local device="$1"
+	config_get disabled "$section" disabled
+	[ "$disabled" = 1 ] && return
+	mac=${mac//-/:}
+	config_foreach setmacforvap wifi-iface $device
+}
+
+setmacforvap() {
+	local section="$1"
+	config_get device "$section" device
+	[ ! "$device" = "$2" ] && return
+	config_get disabled "$section" disabled
+	config_get mode "$section" mode
+	config_get type "$section" type
+	config_get ifname "$section" ifname
+	[ "$disabled" = 1 ] && return
+	#if vap is backhaul, return
+	[ "$type" = "backhaul" ] && return
+	# flush MAC list
+	iwpriv "$ifname" maccmd_sec 3
+	[ -n "$maclist_sec" ] && {
+	for mac in $maclist_sec; do
+		iwpriv "$ifname" addmac_sec "$mac"
+	done;
+	}
+	iwpriv "$ifname" maccmd_sec 2
+}
+
+#add by wanghao
+setblacklistiptables() {
+	iptables -N blacklist
+	
+	iptables -D forwarding_rule -j blacklist
+	iptables -I forwarding_rule 2 -j blacklist
+
+	iptables -D input_rule -j blacklist
+	iptables -I input_rule 1 -j blacklist
+	
+	iptables -F blacklist
+	[ -n "$maclist_sec" ] && {
+	
+	for mac in $maclist_sec; do
+		iptables -A blacklist -i br-lan -m mac --mac-source $mac -j DROP
+	done;
+	}
+}
+#add end
+
+#add by frl,2017.06.14
+setblacklistebtables() {
+	ebtables -N blacklist
+	
+	ebtables -D INPUT -j blacklist
+	ebtables -I INPUT 1 -j blacklist
+
+	ebtables -D FORWARD -j blacklist
+	ebtables -I FORWARD 1 -j blacklist
+	
+	ebtables -F blacklist
+	[ -n "$maclist_sec" ] && {
+
+	for mac in $maclist_sec; do
+		ebtables -A blacklist -i eth+ -s $mac -j DROP
+		echo "ebtables -A blacklist -i eth+ -s $mac -j DROP" > /dev/console
+	done;
+	}
+}
+#add end
+
+updateneighlist() {
+	[ -n "$maclist_sec" ] && {
+	
+	for mac in $maclist_sec; do
+        ips=$(cat /proc/net/arp | grep -i "$mac" | awk '{print $1}')
+        [ -n "$ips" ] && {
+            for ip in $ips; do
+                conntrack -D -s "$ip"
+                conntrack -D -d "$ip"
+                ip neigh del $ip dev br-lan
+                ip neigh del $ip dev br-guest
+            done
+        }
+	done;
+	}
+}
+
+#add by DengZhong,2017.07.21
+unloadblacklistebtables() {
+	ebtables -N blacklist
+	ebtables -D INPUT -j blacklist
+	ebtables -D FORWARD -j blacklist
+	ebtables -F blacklist
+}
+
+insmodebtablesmodules() {
+	insmod ebtables
+	insmod ebtable_broute
+	insmod ebtable_filter
+	insmod ebtable_nat
+	insmod ebt_802_3
+	insmod ebt_among
+	insmod ebt_limit
+	insmod ebt_mark_m
+	insmod ebt_pkttype
+	insmod ebt_stp
+	insmod ebt_vlan
+	insmod ebt_mark
+	insmod ebt_redirect
+}
+
+rmmodebtablesmodules() {
+	rmmod ebt_mark_m
+	rmmod ebt_mark
+	rmmod ebt_802_3
+	rmmod ebt_among
+	rmmod ebt_limit
+	rmmod ebt_pkttype
+	rmmod ebt_stp
+	rmmod ebt_vlan
+	rmmod ebt_redirect
+	rmmod ebtable_broute
+	rmmod ebtable_filter
+	rmmod ebtable_nat
+	rmmod ebtables
+}
+
+
+
+#add end

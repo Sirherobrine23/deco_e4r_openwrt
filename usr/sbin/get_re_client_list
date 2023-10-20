@@ -1,0 +1,87 @@
+#!/usr/bin/lua
+
+local sys   = require "luci.sys"
+local nixio = require "nixio"
+local dbg   = require "luci.tools.debug"
+local json = require "luci.json"
+local io    = require "io"
+local ubus   = require "ubus"
+
+local OPCODE_GET_MYSELF = 0xc430
+local MYSELF_CLIENT_LIST_FILE = "/tmp/client_mgmt/myself_client_list"
+
+local function get_myself_client_list()
+    local myself_client_list = {}
+
+    local f = io.open(MYSELF_CLIENT_LIST_FILE, "r")
+    if f then
+        myself_client_list = json.decode(f:read("*all"))
+        f:close()
+    end
+
+    --dbg.print("client_mgmt get_myself: " .. json.encode(myself_client_list))
+
+	return myself_client_list
+end
+
+local function get_re_client_list()
+	local req_msg = {}
+	local _ubus = ubus.connect()
+	local online_client_list = {}
+	local ret
+
+	local myself_client_list = get_myself_client_list()
+	
+	req_msg.opcode = tonumber(OPCODE_GET_MYSELF)
+	req_msg.target_type = "RE"
+	req_msg.data = {}
+	req_msg.data.params = {}
+	req_msg.data.params.client_list = myself_client_list
+	ret = _ubus:call("sync", "request", req_msg)
+	_ubus:close()
+	
+	if not ret or not ret.total or not ret.success  then
+		dbg.print("'sync request' gets invalid reply")
+		return false, online_client_list
+	end
+	
+	if ret.success == 0 then
+		--dbg.print("no reply from RE")
+	elseif ret.success == 1 then
+		if ret.data ~= nil and ret.data.error_code == 0 and ret.data.result ~= nil then
+			local client_list = ret.data.result.client_list or {}
+			
+			for _,client in ipairs(client_list) do
+				online_client_list[#online_client_list+1] = client
+			end
+		end
+	elseif ret.success > 1 then
+		if ret.data ~= nil then
+			for _,v in ipairs(ret.data) do
+				if v.error_code == 0 and v.result ~= nil then
+					local client_list = v.result.client_list or {}
+					for _,client in ipairs(client_list) do
+						online_client_list[#online_client_list+1] = client
+					end
+				end
+			end
+		end
+	else
+		dbg.print("'success' is less than 0")
+		return false, online_client_list
+	end
+	
+	return true, online_client_list
+end
+
+local update, re_client_list = get_re_client_list()
+
+if update then
+	--dbg.print("update re_client_list.....")
+	--dbg.print("re_client_list is " .. json.encode(re_client_list))
+	local fp = io.open("/tmp/client_mgmt/re_client_list", "w+")
+	if fp then
+		fp:write(json.encode(re_client_list))
+		fp:close()
+	end
+end

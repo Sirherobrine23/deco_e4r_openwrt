@@ -1,0 +1,58 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+load_device_info()
+{
+	nvrammanager -i &
+}
+
+local language
+local mode
+
+parsecfg()
+{
+	local cfg="$1"
+
+	config_get language "$cfg" language
+	config_get mode "$cfg" mode
+}
+
+load_runtime_info()
+{
+	config_load common
+	config_foreach parsecfg common
+	config_clear
+
+	json_init
+	json_add_int mode $mode
+	json_add_string language $language
+
+	echo "$(json_dump)" > /tmp/device_runtime.info
+}
+
+
+start()
+{
+	load_device_info
+	load_runtime_info
+}
+
+
+cmd="$1"
+
+case "$cmd" in
+	"start")
+		start
+		;;
+	"load_device_info")
+		load_device_info
+		;;
+	"load_runtime_info")
+		load_runtime_info
+		;;
+	*)
+	echo "error arguments"
+	;;
+esac

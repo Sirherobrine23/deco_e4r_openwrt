@@ -1,0 +1,33 @@
+#! /usr/bin/env lua
+--
+-- cloud_manager_set.lua
+-- Copyright (C) 2018 tpuser <tpuser@liushuaiwei>
+--
+-- Distributed under terms of the MIT license.
+--
+
+local dbg    = require "luci.tools.debug"
+local uci    = require "luci.model.uci"
+local json   = require "luci.json"
+
+local uci_r = uci.cursor()  
+
+local manager_limited = uci_r:get("cloud_config","device_status","manager_limited")
+
+if manager_limited ~= nil then
+    dbg.print("manager permission has been set, no need to set again")
+    return 0
+end
+
+local factorymode = uci_r:get("wifi", "ap", "factorymode") or "0"
+if factorymode and factorymode == "1" then
+    dbg.print("manager permission will not change due to factorymode")
+	return 0
+end
+
+local manager = require "luci.model.manager"
+manager.set_manager_permission_all_enable()
+
+uci_r:set("cloud_config","device_status","manager_limited", 0)
+uci_r:commit("cloud_config")
+

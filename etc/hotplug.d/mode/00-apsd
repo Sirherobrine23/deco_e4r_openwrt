@@ -1,0 +1,10 @@
+#!/bin/sh
+
+[ "$POINT" == "END" ] || exit 0;
+
+if [ "$SRCMODE" = "NONE" -o "$SRCMODE" = "RE" ] && [ "$DSTMODE" = "FAP" -o "$DSTMODE" = "HAP" ]; then
+    ubus send apsd.configure '{"mode":"AP"}'
+elif [ "$SRCMODE" = "NONE" -o "$SRCMODE" = "FAP" -o "$SRCMODE" = "HAP" ] && [ "$DSTMODE" = "RE" ]; then
+    ubus send apsd.configure '{"mode":"RE"}'
+fi
+

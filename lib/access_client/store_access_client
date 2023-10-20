@@ -1,0 +1,8 @@
+#!/usr/bin/lua
+
+local uci   = require "luci.model.uci"
+local dbg   = require "luci.tools.debug"
+local client = require "luci.model.app_clientmgmt"
+
+-- store access client info from TEMP_UCI_PATH to device-config
+client.store_access_client_info()

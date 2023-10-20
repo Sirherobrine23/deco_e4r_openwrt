@@ -1,0 +1,12 @@
+#!/usr/bin/lua
+
+-- check inet error and add inet_down msg
+
+local dbg   = require "luci.tools.debug"
+local msg	= require "luci.model.message_center"
+
+dbg.print("msg_check_inet")
+
+local msg_s = msg.Msgcenter()
+msg_s:check_inet_error()
+

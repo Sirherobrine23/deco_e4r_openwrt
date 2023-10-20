@@ -1,0 +1,12 @@
+#!/usr/bin/lua
+
+-- clean new_client and inet error msg
+
+local dbg   = require "luci.tools.debug"
+local msg	= require "luci.model.message_center"
+
+dbg.print("clean_daily_msg")
+
+local msg_s = msg.Msgcenter()
+msg_s:clear_daily_all()
+

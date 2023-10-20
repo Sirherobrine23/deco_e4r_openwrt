@@ -1,0 +1,28 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2016 Shenzhen TP-LINK Technologies Co.Ltd.
+# Author		Wang Hao<wanghao@tp-link.com.cn>
+
+SERVICE_DAEMONIZE=1
+
+START=45
+STOP=45
+
+BR_NAME=br-wan
+
+start() {
+	brctl setfd ${BR_NAME} 0
+	brctl stp ${BR_NAME} off
+	#brctl addif br-lan eth0
+	#ifconfig eth0 up
+	#ifconfig eth1 up
+	
+	service_start /usr/bin/wanDetection
+	
+	return 0
+}
+
+stop() {
+	service_stop /usr/bin/wanDetection
+	
+	return 0
+}

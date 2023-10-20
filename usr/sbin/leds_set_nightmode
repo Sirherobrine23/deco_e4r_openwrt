@@ -1,0 +1,58 @@
+#!/bin/sh
+# Copyright (c) 2015 TP Link, Inc.
+#
+# All Rights Reserved.
+
+local enable=$1
+local time_begin=$2
+local time_end=$3
+local hour
+local minute
+local begin
+local end
+local ntp_sync=0
+
+last_status=$(cat /tmp/last_led_status 2>/dev/null)
+night_status="${enable}:${time_begin}:${time_end}"
+
+if [ -n "${last_status}" ] && [ "${last_status}" == "${night_status}" ];then
+    return #night mode is not change , so do nothing
+fi
+
+if [ "$enable" = "on" ]; then
+	hour=$(($time_begin/60))
+	minute=$(($time_begin%60))
+	begin="$hour":"$minute"
+	
+	hour=$(($time_end/60))
+	minute=$(($time_end%60))
+	end="$hour":"$minute"
+	
+	if [ ! -f "/tmp/run/ntpd.uptime" ]; then
+		while [ "$ntp_sync" = 0 ]; do
+			if [ -f "/tmp/run/ntpd.uptime" ]; then
+				ntp_sync=1
+			fi
+			sleep 1
+		done
+	fi
+	
+	if [ "$time_begin" -lt "$time_end" ]; then
+		tsched_conf -a leds_schedule nightMode "{\"sun\":[[\"$begin\",\"$end\"]],\"mon\":[[\"$begin\",\"$end\"]],\"tue\":[[\"$begin\",\"$end\"]],\"wed\":[[\"$begin\",\"$end\"]],\"thu\":[[\"$begin\",\"$end\"]],\"fri\":[[\"$begin\",\"$end\"]],\"sat\":[[\"$begin\",\"$end\"]]}"
+		tsched_conf -u leds_schedule
+	elif [ "$time_begin" -ge "$time_end" ]; then
+		if [ "$time_end" = 0 ]; then
+			tsched_conf -a leds_schedule nightMode "{\"sun\":[[\"$begin\",\"24:00\"]],\"mon\":[[\"$begin\",\"24:00\"]],\"tue\":[[\"$begin\",\"24:00\"]],\"wed\":[[\"$begin\",\"24:00\"]],\"thu\":[[\"$begin\",\"24:00\"]],\"fri\":[[\"$begin\",\"24:00\"]],\"sat\":[[\"$begin\",\"24:00\"]]}"
+		else
+			tsched_conf -a leds_schedule nightMode "{\"sun\":[[\"$begin\",\"24:00\"],[\"00:00\",\"$end\"]],\"mon\":[[\"$begin\",\"24:00\"],[\"00:00\",\"$end\"]],\"tue\":[[\"$begin\",\"24:00\"],[\"00:00\",\"$end\"]],\"wed\":[[\"$begin\",\"24:00\"],[\"00:00\",\"$end\"]],\"thu\":[[\"$begin\",\"24:00\"],[\"00:00\",\"$end\"]],\"fri\":[[\"$begin\",\"24:00\"],[\"00:00\",\"$end\"]],\"sat\":[[\"$begin\",\"24:00\"],[\"00:00\",\"$end\"]]}"
+		fi
+		tsched_conf -u leds_schedule
+	else
+		echo "unsupported time section..." > /dev/console
+	fi
+elif [ "$enable" = "off" ]; then
+	tsched_conf -D leds_schedule
+	tsched_conf -u leds_schedule
+fi
+
+echo "${night_status}">/tmp/last_led_status

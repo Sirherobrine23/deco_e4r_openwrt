@@ -1,0 +1,24 @@
+#!/usr/bin/lua
+
+local sys    = require "luci.sys"
+local dbg   = require "luci.tools.debug"
+local uci   = require "luci.model.uci"
+
+local TEMP_UCI_PATH = "/tmp/tmp-device-config"
+local uci_r = uci.cursor(TEMP_UCI_PATH) 
+
+uci_r:foreach("access_client", "client",
+        function(section) 
+            uci_r:delete("access_client", section[".name"])    
+        end
+    )  
+
+uci_r:foreach("message_center", "newclient",
+        function(section) 
+            uci_r:delete("message_center", section[".name"])    
+        end
+    ) 
+
+uci_r:rawcommit("access_client")	
+uci_r:rawcommit("message_center")	
+

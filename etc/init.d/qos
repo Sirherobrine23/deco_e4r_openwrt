@@ -1,0 +1,61 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2010 OpenWrt.org
+
+START=99
+USE_PROCD=1
+
+PC_LIBDIR=/lib/qos
+
+pc() {
+	. $PC_LIBDIR/core.sh
+	fw_$1
+}
+is_qos_necessary()
+{
+	local ret="1"
+	config_load sysmode
+	config_get system_mode sysmode mode "Router"
+	if [ "$system_mode" == "AP" ]; then
+		ret="0"
+	fi
+
+	config_load repacd
+    config_get device_type repacd DeviceType 'RE'	
+    if [ "$device_type" = 'RE' ]; then
+    	ret="0"
+    fi
+	echo "$ret"
+}
+
+start_service() {
+
+	local ret=$(is_qos_necessary)
+	if [ "$ret" == "0" ];then
+		return
+	fi
+    echo "qos_v2 start " > /dev/console
+
+	pc start
+}
+
+stop_service() {
+    echo "qos_v2 stop " > /dev/console
+	pc stop
+	
+}
+
+restart_service() {
+    echo "qos_v2 restart " > /dev/console
+	pc restart
+}
+
+reload_service() {
+	local ret=$(is_qos_necessary)
+	if [ "$ret" == "0" ];then
+		return
+	fi
+	pc restart &
+}
+service_triggers(){
+	procd_add_reload_trigger "client_mgmt" "qos_v2"
+}

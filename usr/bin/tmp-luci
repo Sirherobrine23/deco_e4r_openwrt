@@ -1,0 +1,8 @@
+#!/usr/bin/lua
+
+require "luci.cacheloader"
+require "luci.sgi.tmp"
+
+luci.sgi.tmp.set_debug(false)
+
+luci.sgi.tmp.run()

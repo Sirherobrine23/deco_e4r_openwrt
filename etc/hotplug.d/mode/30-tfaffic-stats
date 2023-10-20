@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if [ "$POINT" == "END" ] && [ "$DSTMODE" == "FAP" -o "$DSTMODE" = "HAP" ]; then
+    echo "AP" > /proc/net/statistics/work_mode
+
+    local ifnames iface
+    local eth_ifnames=
+
+    ifnames=`uci get "network.lan.ifname"`
+    for iface in $ifnames; do
+        eth_ifnames="${eth_ifnames}${eth_ifnames:+":"}${iface}"
+    done
+
+    [ -n "$eth_ifnames" ] && echo "$eth_ifnames" > /proc/net/statistics/sta_dev_name
+
+elif [ "$POINT" == "END" -a "$DSTMODE" == "RE" ]; then
+    echo "RE" > /proc/net/statistics/work_mode
+fi
+

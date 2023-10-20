@@ -1,0 +1,8 @@
+#!/usr/bin/lua
+
+local uci   = require "luci.model.uci"
+local dbg   = require "luci.tools.debug"
+local client = require "luci.model.app_clientmgmt"
+
+-- calculate daily number for access clients.
+client.stats_daily_clients()

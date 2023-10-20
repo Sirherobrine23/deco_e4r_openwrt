@@ -1,0 +1,74 @@
+#!/bin/sh
+# Copyright (c) 2017 Shenzhen TP-LINK Technologies Co.Ltd.
+# Author		Wang Hao<wanghao@tp-link.com.cn>
+
+. /usr/lib/dnsproxy/dnsproxy_api.sh
+
+local dnsp_servers
+local prime_dns
+local second_dns
+local resolv_conf=/tmp/resolv.conf.auto
+local SYS_MODE_DB=/tmp/sys_mode
+local smartip_dns=/tmp/dns
+local prime_dns_resolv
+local second_dns_resolv
+local mode
+local ifc
+
+sysmode_get_db() {
+    local sys_mode="Router"
+    if [ -f $SYS_MODE_DB ]; then
+        sys_mode="$(cat $SYS_MODE_DB)"
+    fi
+    echo $sys_mode
+}
+
+if [ "$SRCMODE" = "RE" -o "$SRCMODE" = "NONE" ] && [ "$DSTMODE" = "FAP" -o "$DSTMODE" = "HAP" ]; then
+    mode=RE2AP
+elif [ "$SRCMODE" = "FAP" -o "$SRCMODE" = "HAP" ] && [ "$DSTMODE" = "RE" ]; then
+    mode=AP2RE
+fi
+
+[ "$POINT" == "END" -a "$mode" == "RE2AP" ] && {
+    if [ "$(sysmode_get_db)" = "Router" ]; then
+	network_flush_cache
+
+	dnsp_servers=$(dnsproxy_get_dns_servers)
+    [ -z "$dnsp_servers" ] && {
+        # If getting dns servers failed, then tried to get
+        # dns servers from wan
+        network_get_dnsserver dnsp_servers "wan"
+    }
+	
+        prime_dns=$(echo "$dnsp_servers"|awk -F ' ' '{print $1}')
+        second_dns=$(echo "$dnsp_servers"|awk -F ' ' '{print $2}')
+
+        ifc="wan"
+	#echo $dnsp_servers > /dev/console
+    else
+        #apmode
+        prime_dns=$(cat $smartip_dns | sed -n "1p")
+        second_dns=$(cat $smartip_dns | sed -n "2p")
+
+        ifc="lan"
+    fi
+
+	prime_dns_resolv=$(cat $resolv_conf | sed -n "2p" | cut -c 12-)
+	second_dns_resolv=$(cat $resolv_conf | sed -n "3p" | cut -c 12-)
+
+	if [ "$prime_dns" != "$prime_dns_resolv" -o "$second_dns" != "$second_dns_resolv" ]; then
+		local wantype=$(uci_get network wan wan_type)
+		if [ "$prime_dns" == "" ] && [ "$second_dns" == "" ]; then
+            if [ "$wantype" == "dslite" ] || [ "$wantype" == "dhcp" ] || [ "$wantype" == "pppoe" ] || [ "$wantype" == "pppoeshare" ]; then
+                return 0
+            fi
+		fi
+		echo "update $resolv_conf $prime_dns $second_dns" > /dev/console
+		cat /dev/null > "$resolv_conf"
+		echo "# Interface $ifc" > "$resolv_conf"
+		echo "nameserver $prime_dns" >> "$resolv_conf"
+		echo "nameserver $second_dns" >> "$resolv_conf"
+	fi
+}
+
+return 0

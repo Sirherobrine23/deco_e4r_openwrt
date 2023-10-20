@@ -1,0 +1,110 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2018 Tp-link.com
+# Author: xsfour <xushengfu@tp-link.com.cn>
+# Date: 17Mar18
+
+# boot after repacd
+START=87
+# stop before leds
+STOP=20
+
+. /lib/functions.sh
+
+USE_PROCD=1
+PROG=/usr/sbin/wpsd
+
+DEBUG_OUTOUT=1
+LEVEL=6
+conf_path="/etc/wpsd.conf"
+tmp_conf_path="/tmp/wpsd_tmp.conf"
+
+wpsd_echo() {
+    if [ "$DEBUG_OUTOUT" -gt 0 ]; then
+        logger -p $LEVEL "wps: $1"
+    fi
+}
+
+__write_conf() {
+    local ifname=$1
+    local l_conf_path=$2
+
+    [ -n "$ifname" ] || {
+        return 1
+    }
+    
+    local device=`uci get wireless.${ifname}.device`
+    [ -n "$device" ] || {
+        return 0
+    }    
+    
+    local ap_2g
+    local ap_5g
+    config_load wifi
+    config_get ap_2g ap enable_2g 1
+    config_get ap_5g ap enable_5g 1
+
+    if [ "$device" = "wifi0" -a "$ap_2g" = "1" ]; then
+        wpsd_echo "wps 2G enable" 
+
+        echo /var/run/hostapd-${device}/${ifname} >> ${l_conf_path}
+    elif [ "$device" = "wifi1" -a "$ap_5g" = "1" ]; then
+        wpsd_echo "wps 5G enable"
+
+        echo /var/run/hostapd-${device}/${ifname} >> ${l_conf_path}
+    elif [ "$device" = "wifi2" -a "$ap_5g" = "1" ]; then
+        wpsd_echo "wps 5G_2 enable" 
+
+        echo /var/run/hostapd-${device}/${ifname} >> ${l_conf_path}
+    fi
+
+}
+
+start_service() {
+    wpsd_echo "wpsd start" 
+    config_load wps
+    config_get enabled wpsd enabled 1
+    [ "$enabled" -gt 0 ] || {
+        config_clear
+        return 1
+    }
+
+    > ${conf_path}
+    config_foreach __write_conf wifi-iface ${conf_path}
+    config_clear
+
+    procd_open_instance
+    procd_set_param command "$PROG" -c ${conf_path} -l i
+    procd_set_param respawn
+    procd_close_instance
+}
+
+service_triggers() {
+    procd_add_reload_trigger "wifi"
+}
+
+stop_service() {
+    wpsd_echo "stopping"
+    service_stop ${PROG}
+}
+
+reload_service() {
+    wpsd_echo "wpsd reload"
+    
+    local old_md5_sum="0"
+    local new_md5_sum="1"
+
+    [ -f "$conf_path" ] && {
+        old_md5_sum=$(md5sum $conf_path| cut -d ' ' -f1)
+    }
+
+    config_load wps
+    > ${tmp_conf_path}
+    config_foreach __write_conf wifi-iface ${tmp_conf_path}
+    config_clear
+
+    new_md5_sum=$(md5sum $tmp_conf_path| cut -d ' ' -f1)
+
+    [ "${new_md5_sum}" = "${old_md5_sum}" ] &&  return 0 
+
+    /etc/init.d/wpsd restart &
+}

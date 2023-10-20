@@ -1,0 +1,57 @@
+#!/usr/bin/lua
+
+local sys   = require "luci.sys"
+local nixio = require "nixio"
+local dbg   = require "luci.tools.debug"
+local json = require "luci.json"
+local io    = require "io"
+local ubus   = require "ubus"
+
+local function wifi_is_up()
+	local wifi_up = false
+	local fp = io.popen("iwconfig ath0")
+	
+	if not fp then
+		return false
+	end
+	
+	for line in fp:lines() do
+		local bit_rate = string.match(line, "^%s*Bit Rate:(%d+)%s*")
+		if bit_rate then
+			if tonumber(bit_rate) > 0 then
+				wifi_up = true
+			end
+			break
+		end
+	end
+	
+	fp:close()
+	
+	return wifi_up
+end
+
+local function notify_check_client()
+	local _ubus = ubus.connect()
+	
+	dbg.print("notify_check_client: current time is "..os.time())
+	_ubus:call("client_mgmt", "trigger_check", {})
+	
+	_ubus:close()
+end
+
+local wait_times = 0
+local triggers_open = false
+
+while wait_times < 60 do
+	triggers_open = wifi_is_up()
+	if triggers_open == true then
+		break
+	end
+	sys.call("sleep 1")
+	wait_times = wait_times + 1
+end
+sys.call("sleep 45")
+notify_check_client()
+sys.call("sleep 6")
+sys.call("touch /tmp/client_mgmt/client_triggers_opened")
+dbg.print("client triggers is opened.")

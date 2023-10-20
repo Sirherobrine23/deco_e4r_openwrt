@@ -1,0 +1,20 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2011 OpenWrt.org
+
+START=77
+
+boot() {
+#	/etc/init.d/deviceInfo load_runtime_info
+#	/usr/bin/logd &
+	#/etc/init.d/wifi setup
+#	dhcp_hook_d &
+#	/etc/init.d/monitor start
+#	/etc/init.d/smartip start
+#	gpiod &
+#	/etc/init.d/ledCtrl startup
+#   /etc/init.d/powerCtrl startup
+#   /etc/init.d/timerjob startup
+#	/etc/init.d/timedst startup
+	tddp &
+#	tmpServer &
+}

@@ -1,0 +1,15 @@
+#!/usr/bin/lua
+local sys = require "luci.sys"
+local json = require "luci.json"
+local dbg = require "luci.tools.debug"
+local qsmod = require "luci.controller.admin.mobile_app.quick_setup"
+
+local quick = {}
+quick.params = {}
+quick.params.bluetooth = {}
+quick.params.bluetooth.enable = false
+
+
+local cmd = ("echo '%s' | tmpcli -o 0x800f >/dev/null 2>&1 &"):format(json.encode(quick))
+sys.fork_call(cmd)
+

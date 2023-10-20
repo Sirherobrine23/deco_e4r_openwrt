@@ -1,0 +1,6 @@
+#!/bin/sh
+
+if [ "$INTERFACE" == "wan" -a "$ACTION" == "ifup" ]; then
+    killall cloud_reconnect
+	cloud_reconnect &
+fi

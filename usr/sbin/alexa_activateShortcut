@@ -1,0 +1,32 @@
+#!/usr/bin/lua
+
+local alexa = require "cloud.tp_apps.alexa"
+local sys   = require "luci.sys"
+local nixio = require "nixio"
+local dbg   = require "luci.tools.debug"
+local json = require "luci.json"
+local io    = require "io"
+local ctl_auto = require "luci.controller.admin.mobile_app.iot_automation"
+local uci_r = uci.cursor()
+
+local ctl_tbl = {
+    set_shortcut = {
+        ctl = ctl_auto,
+        form = "iotoneclick",
+        oper = "set"
+    }
+}
+
+local req = {}
+req.cur_scene = {}
+req.cur_scene.scene_id = tostring(arg[1])
+local error_code, result = alexa.control_dispatch(ctl_tbl.set_shortcut, req, config_version)
+if error_code ~= 0 then
+    dbg.print("Fail to execute alexa shortcut")
+else
+    if result.is_success == true then
+        dbg.print("Alexa shortcut executes success")
+    else
+        dbg.print("Alexa shortcut executes error") 
+    end
+end

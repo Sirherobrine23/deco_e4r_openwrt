@@ -1,0 +1,102 @@
+#!/bin/ash
+
+. /lib/functions.sh
+
+DEBUG_OUTOUT=1
+
+config_load iptv_v2
+config_get iptv_enable info enable 0
+config_get iptv_vid info iptv_vid
+config_get iptv_prio info iptv_prio
+config_get iptv_type info iptv_type
+config_clear
+
+config_load sysmode
+config_get sysmode sysmode mode 'Router'
+config_clear
+
+wan_echo() {
+    if [ "$DEBUG_OUTOUT" -gt 0 ]; then
+            echo "wandetect: ""$1"> /dev/console
+        fi
+}
+
+
+move_interface_wan_bridge() {
+    local iface="$1"
+    local device_id=$(getfirm DEV_ID)
+    local role=$(uci get bind_device_list."$device_id".role)
+    wan_echo "move $iface to wan bridge"
+
+    [ -n "$iface" ] && {
+        if [ "$role" != "RE" -a "$sysmode" = "Router" ] && [ "$iptv_enable" = "1" -o "$iptv_type" = "bridge" ]; then
+            if [ -d "/sys/class/net/br-iptv/brif/$iface" ]; then
+                wan_echo "iptv enable, $iface at br-iptv"
+                brctl delif br-iptv "$iface";
+            elif [ -d "/sys/class/net/br-lan/brif/$iface" ]; then
+                wan_echo "iptv enable, $iface at br-lan"
+                brctl delif br-lan "$iface";
+            fi
+        else
+            if [ -d "/sys/class/net/br-lan/brif/$iface" ]; then
+                wan_echo "iptv disable, $iface at br-lan"
+                brctl delif br-lan "$iface";
+            elif [ -d "/sys/class/net/br-iptv/brif/$iface" ]; then
+                wan_echo "iptv disable, $iface at br-iptv"
+                brctl delif br-iptv "$iface";
+            fi
+        fi
+
+        brctl addif br-wan "$iface";
+        ethtool -K "$iface" gro on;
+        echo 1 > /sys/class/net/br-wan/brif/"$iface"/isolate_mode
+    }
+
+}
+
+move_interface_other_bridge() {
+    local iface="$1"
+    local device_id=$(getfirm DEV_ID)
+    local role=$(uci get bind_device_list."$device_id".role)
+    wan_echo "move $iface to other bridge"
+    [ -n "$iface" ] && {
+
+        if [ "$role" != "RE" -a "$sysmode" = "Router" ] && [ "$iptv_enable" = "1" -o "$iptv_type" = "bridge" ]; then
+            
+            if [ "$iptv_enable" == "1" ]; then
+
+                wan_echo "move $iface to iptv bridge"
+                brctl delif br-wan "$iface";
+                brctl addif br-iptv "$iface";
+
+            else
+
+                wan_echo "move $iface to wan bridge"
+
+                if [ -d "/sys/class/net/br-wan/brif/eth0" ]; then
+                    echo 0 > /sys/class/net/br-wan/brif/eth0/isolate_mode
+                fi
+
+                if [ -d "/sys/class/net/br-wan/brif/eth1" ]; then
+                    echo 0 > /sys/class/net/br-wan/brif/eth1/isolate_mode
+                fi
+
+            fi
+
+        else
+            wan_echo "move $iface to lan bridge"
+            brctl delif br-wan "$iface";
+            brctl addif br-lan "$iface";
+        fi
+        ethtool -K "$iface" gro off
+
+    }
+}
+
+
+trap '' INT TERM ABRT QUIT ALRM 
+
+case "$1" in
+    wan) move_interface_wan_bridge "$2" ;;
+    other) move_interface_other_bridge "$2" ;;
+esac

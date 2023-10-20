@@ -1,0 +1,72 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2010 OpenWrt.org
+
+START=99
+
+USE_PROCD=1
+
+IF_LIBDIR=/lib/ipv6-firewall
+TEMP_IF_PATH=/tmp/ipv6_firewall
+
+ipv6_firewall() {
+	. $IF_LIBDIR/core.sh
+	fw_$1
+}
+
+is_necessary() {
+	local ret="1"
+	config_load sysmode
+	config_get system_mode sysmode mode "Router"
+	if [ "$system_mode" == "AP" ]; then
+		ret="0"
+	fi
+
+	config_load repacd
+	config_get device_type repacd DeviceType 'RE'
+	if [ "$device_type" = 'RE' ]; then
+		ret="0"
+	fi
+	echo "$ret"
+}
+
+start_service() {
+        if [ ! -f $TEMP_IF_PATH/op_rule_id ];then
+                echo "*****$TEMP_IF_PATH/op_rule_id file not found, create it.*****" > /dev/console
+                mkdir $TEMP_IF_PATH
+                touch $TEMP_IF_PATH/op_rule_id
+        fi
+
+        local ret=$(is_necessary)
+        if [ "$ret" == "0" ];then
+		echo "NO necessary to load ipv6 firewall, return." > /dev/console
+                return
+        fi
+
+        if [ ! -f /etc/config/ipv6_firewall ];then
+                touch /etc/config/ipv6_firewall
+                uci commit
+        fi
+
+	ipv6_firewall start
+
+        procd_open_instance
+        procd_set_param command echo "Ipv6 Firewall config trigger start!"
+        procd_close_instance
+}
+
+stop_service() {
+	ipv6_firewall stop
+	echo "Ipv6 Firewall config trigger stop!" > /dev/console
+}
+
+restart_service() {
+	ipv6_firewall restart
+}
+
+reload_service() {
+	ipv6_firewall reload
+}
+
+service_triggers(){
+        procd_add_reload_trigger  "ipv6_firewall"
+}

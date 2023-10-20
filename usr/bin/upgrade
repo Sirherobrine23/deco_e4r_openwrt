@@ -1,0 +1,24 @@
+#!/usr/bin/lua
+
+local Locker = require("luci.model.locker").Locker
+local sync = require "luci.model.sync"
+local subprocess = require "luci.model.subprocess"
+
+local fw = arg[1]
+assert(fw)
+
+local fw_locker = Locker(sync.FIRMWARE_LOCK)
+fw_locker:lock()
+
+local cf_locker = Locker(sync.CONFIG_LOCK)
+cf_locker:lock()
+
+local dc_locker = Locker(sync.DEVICE_CONFIG_SAVE_LOCK)
+dc_locker:lock()
+
+subprocess.call({"nvrammanager", "-u", fw})
+
+-- Should not reach here.
+dc_locker:close()
+cf_locker:close()
+fw_locker:close()

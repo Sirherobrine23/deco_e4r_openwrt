@@ -1,0 +1,11 @@
+#!/bin/sh
+
+while true
+do
+    if [[ "$(ps | grep "/usr/sbin/radar" | grep -v grep)" == "" \
+        && "$(cat /tmp/is_binded)" == "1" ]]; then
+        /etc/init.d/nrd restart
+        break
+    fi
+    sleep 5
+done

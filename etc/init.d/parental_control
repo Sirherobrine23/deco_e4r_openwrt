@@ -1,0 +1,106 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2010 OpenWrt.org
+
+START=99
+
+USE_PROCD=1
+PC_LIBDIR=/lib/parental_control
+UPDATE_DAEMON="url-lib-upd"
+UPDATE_DAEMON_PATH="/usr/sbin"
+G_NTP_TIME="/tmp/run/ntpd.uptime"
+TEMP_PCTL_PATH="/tmp/parental_control"
+local TEMP_UCI_PATH="/tmp/tmp-device-config"
+local pctl_crontab_cmd="0-59\/1 \* \* \* \* \/sbin\/pctl_log_update"
+local INSIGHTS_UCI_FILE="/tmp/tmp-device-config/pc_insights"
+#get last day time after reboot
+boot()
+{
+
+	# read url_lib from flash by nvrammanager
+	. $PC_LIBDIR/url_lib.sh
+	create_default_url_lib_file
+	mount --bind /tmp/parental_control/url_lib /www/url_lib
+	
+	# get today history before reboot
+	. $PC_LIBDIR/core_get_history.sh
+	get_all_time_before_reboot
+	
+	# start daemon,check url signature and update it from cloud
+	${UPDATE_DAEMON_PATH}/${UPDATE_DAEMON}
+
+	# cp pc_insights to /tmp/parental_control
+	cp /etc/config/pc_insights $TEMP_PCTL_PATH
+}
+pc() {
+
+	. $PC_LIBDIR/core.sh
+	fw_$1
+}
+
+is_pctl_necessary()
+{
+	local ret="1"
+	config_load sysmode
+	config_get system_mode sysmode mode "Router"
+	if [ "$system_mode" == "AP" ]; then
+		ret="0"
+	fi
+
+	config_load repacd
+    config_get device_type repacd DeviceType 'RE'	
+    if [ "$device_type" = 'RE' ]; then
+    	ret="0"
+    fi
+	echo "$ret"
+}
+
+start_service() {
+	local ret=$(is_pctl_necessary)
+	if [ "$ret" == "0" ];then
+		return
+	fi
+	insmod /lib/modules/3.3.8/xt_pctl.ko
+	if [ ! -f /etc/config/parental_control ];then
+		touch /etc/config/parental_control
+		touch /etc/config/history_list
+		touch /etc/config/client_mgmt
+		uci commit
+	fi
+	# add pctl_log_update to crontabs
+	sed -i "/^${pctl_crontab_cmd}/d" /etc/crontabs/root 
+	echo "0-59/1 * * * * /sbin/pctl_log_update">>/etc/crontabs/root
+	/etc/init.d/cron restart
+	# cp pc_insights to tmp/tmp-device-config/
+	if [ ! -f $INSIGHTS_UCI_FILE ]; then
+		if [ ! -d $TEMP_UCI_PATH ]; then
+			mkdir $TEMP_UCI_PATH
+		fi
+		cp /etc/config/pc_insights $TEMP_UCI_PATH
+	fi
+	if [ -f "$G_NTP_TIME" ];then # start pctl if ntp get time
+		date -k # update time zone to kernel(sys_tz)
+		pc start
+	fi
+	procd_open_instance
+	procd_set_param command echo "Parent Control config trigger start!"
+	procd_close_instance
+}
+
+
+stop_service() {
+	pc stop
+	echo "Parent Control config trigger stop!"
+}
+
+restart_service() {
+	pc restart
+}
+
+reload_service() {
+	if [ -f "$G_NTP_TIME" ];then # start pctl if ntp get time
+		pc reload &
+	fi	
+}
+service_triggers(){
+	procd_add_reload_trigger  "client_mgmt"
+}

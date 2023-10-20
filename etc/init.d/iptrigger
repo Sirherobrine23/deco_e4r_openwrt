@@ -1,0 +1,11 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+USE_PROCD=1
+
+service_triggers() {
+	procd_open_trigger
+	procd_add_config_trigger "config.change" "smartip_sync" ubus send smartip '{"action":2, "status":19}'
+	procd_add_config_trigger "config.change" "dhcp_server_sync" ubus send smartip '{"action":2, "status":20}'
+	procd_close_trigger
+}
